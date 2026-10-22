@@ -12,7 +12,18 @@ test.describe('Notes', () => {
     await content.click()
     await page.keyboard.type('Ingrédients importants')
     // Mise en forme : gras sur le dernier mot, police manuscrite, surlignage jaune
-    await page.keyboard.press('Control+Shift+ArrowLeft')
+    // Sélection du mot par une plage de texte (indépendante des polices et des raccourcis du système).
+    await page.evaluate(() => {
+      const paragraph = [...document.querySelectorAll('.note-content p')].find((p) => p.textContent?.includes('importants'))!
+      const node = paragraph.firstChild!
+      const start = node.textContent!.indexOf('importants')
+      const range = document.createRange()
+      range.setStart(node, start)
+      range.setEnd(node, start + 'importants'.length)
+      window.getSelection()!.removeAllRanges()
+      window.getSelection()!.addRange(range)
+    })
+    await expect.poll(() => page.evaluate(() => window.getSelection()?.toString().trim())).toBe('importants')
     await page.getByRole('button', { name: 'Gras (Ctrl+B)' }).click()
     await page.getByRole('combobox', { name: 'Police' }).selectOption({ label: 'Manuscrite (Caveat)' })
     await page.getByRole('button', { name: 'Surligner', exact: true }).click()
