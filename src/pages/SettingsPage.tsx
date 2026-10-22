@@ -1,4 +1,6 @@
+import { LogOut, ShieldCheck } from 'lucide-react'
 import type { ReactNode } from 'react'
+import { useAuth } from '../auth/useAuth'
 import { PageHeader } from '../components/PageHeader'
 import { THEME_OPTIONS } from '../theme/theme'
 import { useTheme } from '../theme/useTheme'
@@ -14,11 +16,29 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
 
 export default function SettingsPage() {
   const { preference, setPreference } = useTheme()
+  const { session, signOut } = useAuth()
 
   return (
     <div className="flex min-h-full flex-col">
       <PageHeader title="Réglages" />
       <main className="mx-auto w-full max-w-2xl space-y-4 p-4">
+        <Section title="Compte">
+          <p className="truncate font-medium">{session?.user.email}</p>
+          <p className="mt-1 flex items-center gap-1.5 text-sm text-muted">
+            <ShieldCheck aria-hidden className="size-4 text-accent" />
+            Double authentification active
+          </p>
+          <button
+            type="button"
+            onClick={() => {
+              if (confirm('Se déconnecter de MonHub sur cet appareil ?')) void signOut()
+            }}
+            className="mt-4 flex min-h-11 items-center gap-2 rounded-xl border border-border px-4 text-sm font-medium text-danger transition-colors hover:bg-danger/10"
+          >
+            <LogOut aria-hidden className="size-4" />
+            Se déconnecter
+          </button>
+        </Section>
         <Section title="Thème">
           <div role="radiogroup" aria-label="Thème" className="grid grid-cols-3 gap-1 rounded-xl bg-surface-2 p-1">
             {THEME_OPTIONS.map((option) => (
