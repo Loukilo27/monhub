@@ -4,7 +4,7 @@ import { musicApp } from './music'
 import { notesApp } from './notes'
 import { paintApp } from './paint'
 import { todoApp } from './todo'
-import type { MiniApp } from './types'
+import type { MiniApp, WidgetDefinition } from './types'
 
 /**
  * Registre central des mini-applis. Pour en ajouter une : créer son dossier
@@ -17,3 +17,10 @@ const byId = new Map(APPS.map((app) => [app.id, app]))
 export function getApp(id: string | undefined): MiniApp | undefined {
   return id ? byId.get(id) : undefined
 }
+
+export function getWidget(appId: string, widgetId: string | undefined): WidgetDefinition | undefined {
+  return getApp(appId)?.widgets.find((widget) => widget.id === widgetId)
+}
+
+/** Tous les widgets disponibles, avec leur mini-appli. */
+export const ALL_WIDGETS = APPS.flatMap((app) => app.widgets.map((widget) => ({ app, widget })))

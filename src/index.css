@@ -70,6 +70,36 @@ body {
   outline-offset: 2px;
 }
 
+/* Accueil : couleur des libellés selon le fond d'écran (blanc ombré sur fond sombre). */
+.home-label {
+  color: var(--home-fg, var(--text));
+  text-shadow: var(--home-shadow, none);
+}
+.home-dark {
+  --home-fg: #fff;
+  --home-shadow: 0 1px 3px rgb(0 0 0 / 0.6);
+}
+.home-light {
+  --home-fg: #14171c;
+  --home-shadow: none;
+}
+
+/* Mode édition : les éléments tremblent légèrement. */
+@keyframes jiggle {
+  0% {
+    transform: rotate(-1deg);
+  }
+  50% {
+    transform: rotate(1.1deg);
+  }
+  100% {
+    transform: rotate(-1deg);
+  }
+}
+.jiggle {
+  animation: jiggle 0.32s ease-in-out infinite;
+}
+
 /* Transitions de page (API View Transitions, utilisée par react-router). */
 ::view-transition-old(root),
 ::view-transition-new(root) {

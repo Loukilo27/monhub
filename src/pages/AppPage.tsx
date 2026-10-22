@@ -25,7 +25,11 @@ export default function AppPage() {
       <PageHeader
         title={app.name}
         icon={
-          <span className="grid size-8 place-items-center rounded-lg text-white" style={{ background: app.color }}>
+          <span
+            className="grid size-8 place-items-center rounded-lg text-white"
+            // Même nom que l'icône cliquée sur l'accueil : l'icône « s'envole » vers l'en-tête.
+            style={{ background: app.color, viewTransitionName: `app-icon-${app.id}` }}
+          >
             <Icon aria-hidden className="size-4" />
           </span>
         }

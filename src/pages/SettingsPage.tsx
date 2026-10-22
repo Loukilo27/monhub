@@ -3,6 +3,8 @@ import type { ReactNode } from 'react'
 import { useAuth } from '../auth/useAuth'
 import { PageHeader } from '../components/PageHeader'
 import { THEME_OPTIONS } from '../theme/theme'
+import { useSetTheme } from '../settings/settingsSync'
+import { WallpaperSettings } from '../settings/WallpaperSettings'
 import { useTheme } from '../theme/useTheme'
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
@@ -15,7 +17,8 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
 }
 
 export default function SettingsPage() {
-  const { preference, setPreference } = useTheme()
+  const { preference } = useTheme()
+  const setTheme = useSetTheme()
   const { session, signOut } = useAuth()
 
   return (
@@ -47,13 +50,16 @@ export default function SettingsPage() {
                 type="button"
                 role="radio"
                 aria-checked={preference === option.value}
-                onClick={() => setPreference(option.value)}
+                onClick={() => setTheme(option.value)}
                 className="min-h-11 rounded-lg text-sm font-medium transition-colors aria-checked:bg-surface aria-checked:shadow-soft"
               >
                 {option.label}
               </button>
             ))}
           </div>
+        </Section>
+        <Section title="Fond d’écran">
+          <WallpaperSettings />
         </Section>
         <Section title="À propos">
           <p className="text-sm text-muted">

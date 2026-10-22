@@ -1,5 +1,6 @@
 import type { Session } from '@supabase/supabase-js'
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { clearCachedData } from '../data/queryClient'
 import { requireSupabase } from '../lib/supabase'
 import { deriveAuthStage, type AssuranceLevel } from './stage'
 import { AuthContext } from './useAuth'
@@ -32,6 +33,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = useCallback(async () => {
     await requireSupabase().auth.signOut()
+    // Aucune donnée personnelle ne reste dans le navigateur après déconnexion.
+    await clearCachedData()
   }, [])
 
   const stage = sessionLoaded ? deriveAuthStage(Boolean(session), aal) : 'loading'

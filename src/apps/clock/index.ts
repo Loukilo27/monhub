@@ -9,6 +9,17 @@ export const clockApp: MiniApp = {
   icon: AlarmClock,
   color: '#f59e0b',
   Page: lazy(() => import('./ClockPage')),
-  widgets: [],
+  widgets: [
+    {
+      id: 'clock',
+      name: 'Horloge',
+      sizes: [
+        { w: 2, h: 2 },
+        { w: 2, h: 1 },
+        { w: 4, h: 2 },
+      ],
+      Component: lazy(() => import('./ClockWidget')),
+    },
+  ],
   aiActions: [],
 }

@@ -1,69 +1,43 @@
-import { useEffect, useRef } from 'react'
-import { useAuth } from '../auth/useAuth'
-import { requireSupabase } from '../lib/supabase'
-import { isThemePreference } from '../theme/theme'
+import { useCallback, useEffect, useRef } from 'react'
+import { useSettings, useUpdateSettings } from '../data/queries'
+import type { ThemePreference } from '../theme/theme'
 import { useTheme } from '../theme/useTheme'
 
 /**
- * Synchronise le thème avec la table `settings` :
- * - au démarrage, la valeur enregistrée dans Supabase l'emporte (sinon on y enregistre la valeur locale) ;
- * - chaque changement local est envoyé ;
- * - un changement fait sur un autre appareil arrive en temps réel.
+ * Applique le thème enregistré (au démarrage et quand il change sur un autre appareil).
+ * Au tout premier démarrage, crée les réglages avec le thème local.
  * Le localStorage reste la source immédiate (affichage sans attendre le réseau, hors-ligne).
  */
 export function useSettingsSync() {
-  const { session } = useAuth()
   const { preference, setPreference } = useTheme()
-  const userId = session?.user.id
-  // Dernière valeur connue côté serveur, pour ne pas renvoyer ce qu'on vient de recevoir.
-  const remoteTheme = useRef<string | null>(null)
-  const loaded = useRef(false)
-  const localTheme = useRef(preference)
-  useEffect(() => {
-    localTheme.current = preference
-  }, [preference])
+  const settings = useSettings()
+  const { mutate } = useUpdateSettings()
+
+  const serverTheme = settings.data?.theme
+  const noSettingsYet = settings.isSuccess && settings.data === null
 
   useEffect(() => {
-    if (!userId) return
-    const supabase = requireSupabase()
-    let cancelled = false
-    loaded.current = false
+    if (serverTheme) setPreference(serverTheme)
+  }, [serverTheme, setPreference])
 
-    const load = async () => {
-      const { data, error } = await supabase.from('settings').select('theme').maybeSingle()
-      if (cancelled || error) return
-      if (data && isThemePreference(data.theme)) {
-        remoteTheme.current = data.theme
-        setPreference(data.theme)
-      } else if (!data) {
-        // Premier démarrage : on crée la ligne de réglages avec le thème local.
-        remoteTheme.current = localTheme.current
-        await supabase.from('settings').upsert({ user_id: userId, theme: localTheme.current })
-      }
-      loaded.current = true
-    }
-    void load()
-
-    const channel = supabase
-      .channel(`settings:${userId}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'settings', filter: `user_id=eq.${userId}` }, (payload) => {
-        const theme = (payload.new as { theme?: unknown }).theme
-        if (isThemePreference(theme)) {
-          remoteTheme.current = theme
-          setPreference(theme)
-        }
-      })
-      .subscribe()
-
-    return () => {
-      cancelled = true
-      void supabase.removeChannel(channel)
-    }
-  }, [userId, setPreference])
-
+  // On ne crée la ligne qu'une fois ; le thème choisi ensuite est enregistré par useSetTheme.
+  const created = useRef(false)
   useEffect(() => {
-    if (!userId || !loaded.current || remoteTheme.current === preference) return
-    remoteTheme.current = preference
-    void requireSupabase().from('settings').upsert({ user_id: userId, theme: preference })
-  }, [userId, preference])
+    if (!noSettingsYet || created.current) return
+    created.current = true
+    mutate({ theme: preference })
+  }, [noSettingsYet, preference, mutate])
+}
+
+/** Change le thème ici et l'enregistre pour les autres appareils. */
+export function useSetTheme() {
+  const { setPreference } = useTheme()
+  const { mutate } = useUpdateSettings()
+  return useCallback(
+    (theme: ThemePreference) => {
+      setPreference(theme)
+      mutate({ theme })
+    },
+    [setPreference, mutate],
+  )
 }

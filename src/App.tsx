@@ -1,46 +1,74 @@
-import { HashRouter, Route, Routes } from 'react-router'
+import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client'
+import { useState, type ReactNode } from 'react'
+import { createHashRouter, Outlet, RouterProvider, type RouteObject } from 'react-router'
 import { AuthGate } from './auth/AuthGate'
 import { AuthProvider } from './auth/AuthProvider'
+import { DemoAuthProvider } from './auth/DemoAuthProvider'
 import { ReloadPrompt } from './components/ReloadPrompt'
+import { ToastProvider } from './components/toast'
+import { isDemoMode } from './data'
+import { useRealtimeSync } from './data/queries'
+import { persistOptions, queryClient } from './data/queryClient'
 import { useKeyboardShortcuts } from './lib/useKeyboardShortcuts'
 import { isSupabaseConfigured } from './lib/supabase'
 import AppPage from './pages/AppPage'
 import HomePage from './pages/HomePage'
-import NotFoundPage from './pages/NotFoundPage'
 import NotConfiguredPage from './pages/NotConfiguredPage'
+import NotFoundPage from './pages/NotFoundPage'
 import SettingsPage from './pages/SettingsPage'
 import { useSettingsSync } from './settings/settingsSync'
 import { ThemeProvider } from './theme/ThemeProvider'
 
-export function AppRoutes() {
+/** Racine des pages connectées : raccourcis clavier, synchronisation des réglages et temps réel. */
+function RootLayout() {
   useKeyboardShortcuts()
   useSettingsSync()
+  useRealtimeSync()
+  return <Outlet />
+}
+
+const routes: RouteObject[] = [
+  {
+    element: <RootLayout />,
+    children: [
+      { path: '/', element: <HomePage /> },
+      { path: '/app/:appId', element: <AppPage /> },
+      { path: '/settings', element: <SettingsPage /> },
+      { path: '*', element: <NotFoundPage /> },
+    ],
+  },
+]
+
+function Router() {
+  // Routage par « hash » (#/app/notes) : GitHub Pages ne sait pas réécrire les URL vers index.html.
+  const [router] = useState(() => createHashRouter(routes))
+  return <RouterProvider router={router} />
+}
+
+function Authenticated({ children }: { children: ReactNode }) {
+  if (isDemoMode) return <DemoAuthProvider>{children}</DemoAuthProvider>
   return (
-    <Routes>
-      <Route path="/" element={<HomePage />} />
-      <Route path="/app/:appId" element={<AppPage />} />
-      <Route path="/settings" element={<SettingsPage />} />
-      <Route path="*" element={<NotFoundPage />} />
-    </Routes>
+    <AuthProvider>
+      <AuthGate>{children}</AuthGate>
+    </AuthProvider>
   )
 }
 
 export default function App() {
   return (
     <ThemeProvider>
-      {isSupabaseConfigured ? (
-        <AuthProvider>
-          <AuthGate>
-            {/* HashRouter : GitHub Pages ne sait pas réécrire les URL vers index.html. */}
-            <HashRouter>
-              <AppRoutes />
-            </HashRouter>
-          </AuthGate>
-        </AuthProvider>
-      ) : (
-        <NotConfiguredPage />
-      )}
-      <ReloadPrompt />
+      <ToastProvider>
+        {isSupabaseConfigured || isDemoMode ? (
+          <PersistQueryClientProvider client={queryClient} persistOptions={persistOptions}>
+            <Authenticated>
+              <Router />
+            </Authenticated>
+          </PersistQueryClientProvider>
+        ) : (
+          <NotConfiguredPage />
+        )}
+        <ReloadPrompt />
+      </ToastProvider>
     </ThemeProvider>
   )
 }

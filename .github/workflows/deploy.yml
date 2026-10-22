@@ -33,6 +33,12 @@ jobs:
       - name: Tests
         run: npm test
 
+      - name: Navigateur des tests de bout en bout
+        run: npx playwright install --with-deps chromium
+
+      - name: Tests de bout en bout (mode démo)
+        run: npm run e2e
+
       - name: Build
         run: npm run build
         env:

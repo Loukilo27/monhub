@@ -21,7 +21,9 @@ Autres commandes :
 
 | Commande | Rôle |
 |---|---|
-| `npm test` | tests unitaires (Vitest) |
+| `npm run dev:demo` | app en **mode démo** : sans connexion, données factices dans le navigateur |
+| `npm test` | tests unitaires et d'intégration (Vitest) |
+| `npm run e2e` | tests de bout en bout (Playwright, mode démo, Edge en local) |
 | `npm run typecheck` | vérification TypeScript |
 | `npm run lint` | analyse statique (oxlint) |
 | `npm run build` | build de production dans `dist/` |
