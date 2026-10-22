@@ -9,6 +9,7 @@ import { ReloadPrompt } from './components/ReloadPrompt'
 import { ToastProvider } from './components/toast'
 import { isDemoMode } from './data'
 import { useRealtimeSync } from './data/queries'
+import { useRowsRealtime } from './data/rows'
 import { persistOptions, queryClient } from './data/queryClient'
 import { useKeyboardShortcuts } from './lib/useKeyboardShortcuts'
 import { isSupabaseConfigured } from './lib/supabase'
@@ -26,6 +27,8 @@ function RootLayout() {
   useKeyboardShortcuts()
   useSettingsSync()
   useRealtimeSync()
+  // Tâches et agenda : synchronisés en temps réel entre appareils (l'Horloge gère ses tables dans ClockRinger).
+  useRowsRealtime(['todo_lists', 'tags', 'tasks', 'events'])
   useNotificationLinks()
   return (
     <>

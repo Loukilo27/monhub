@@ -3,6 +3,7 @@
 import webpush from 'npm:web-push@3.6.7'
 import { adminClient, corsHeaders, env, json, requireOwner, safeEqual } from '../_shared/admin.ts'
 import { ACTION_LABELS, shouldPush, type NotificationPreferences } from '../_shared/notificationRules.ts'
+import { nextEventReminder } from '../_shared/events.ts'
 import { nextAlarmOccurrence } from '../_shared/zonedTime.ts'
 
 interface Reminder {
@@ -12,6 +13,7 @@ interface Reminder {
   kind: string
   ref_id: string | null
   snoozed: boolean
+  offset_minutes: number | null
   title: string
   body: string
   url: string
@@ -41,6 +43,10 @@ async function followUp(admin: ReturnType<typeof adminClient>, reminder: Reminde
       .update({ state: 'finished', ends_at: null, remaining_seconds: 0 })
       .eq('id', reminder.ref_id)
       .eq('state', 'running')
+    return null
+  }
+  if (reminder.kind === 'event') {
+    await scheduleNextEventReminder(admin, reminder, timeZone)
     return null
   }
   if (reminder.kind !== 'alarm') return null
@@ -77,6 +83,47 @@ async function followUp(admin: ReturnType<typeof adminClient>, reminder: Reminde
   return alarm
 }
 
+/** Événement récurrent : programme le même rappel (« X min avant ») pour l'occurrence suivante. */
+async function scheduleNextEventReminder(admin: ReturnType<typeof adminClient>, reminder: Reminder, timeZone: string) {
+  if (reminder.snoozed || reminder.offset_minutes === null || !reminder.ref_id) return
+  const { data: event } = await admin
+    .from('events')
+    .select('id, title, location, all_day, start_at, end_at, recurrence_rule, exception_dates')
+    .eq('id', reminder.ref_id)
+    .maybeSingle()
+  if (!event?.recurrence_rule) return
+  // Prochain rappel après celui-ci, donc pour l'occurrence suivante.
+  const next = nextEventReminder(event, reminder.offset_minutes, new Date(new Date(reminder.send_at).getTime() + 1000), timeZone)
+  if (!next) return
+  const { count } = await admin
+    .from('reminders')
+    .select('id', { count: 'exact', head: true })
+    .eq('ref_id', event.id)
+    .eq('offset_minutes', reminder.offset_minutes)
+    .eq('snoozed', false)
+    .is('sent_at', null)
+  if (count) return
+  const when = new Intl.DateTimeFormat('fr-FR', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    ...(event.all_day ? {} : { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' as const }),
+    timeZone,
+  }).format(next.occurrence.start)
+  await admin.from('reminders').insert({
+    user_id: reminder.user_id,
+    source: 'calendar',
+    kind: 'event',
+    ref_id: event.id,
+    offset_minutes: reminder.offset_minutes,
+    title: event.title,
+    body: [when.charAt(0).toUpperCase() + when.slice(1), event.location].filter(Boolean).join(' · '),
+    url: '/app/calendar?date=' + next.occurrence.date,
+    actions: reminder.actions,
+    send_at: next.sendAt.toISOString(),
+  })
+}
+
 webpush.setVapidDetails(env('VAPID_SUBJECT'), env('VAPID_PUBLIC_KEY'), env('VAPID_PRIVATE_KEY'))
 
 Deno.serve(async (request) => {
@@ -98,7 +145,7 @@ Deno.serve(async (request) => {
     .eq('user_id', ownerId)
     .is('sent_at', null)
     .lte('send_at', now.toISOString())
-    .select('id, user_id, source, kind, ref_id, snoozed, title, body, url, actions, send_at, action_token')
+    .select('id, user_id, source, kind, ref_id, snoozed, offset_minutes, title, body, url, actions, send_at, action_token')
   if (error) return json(request, { error: error.message }, 500)
   if (!due?.length) return json(request, { sent: 0 })
 

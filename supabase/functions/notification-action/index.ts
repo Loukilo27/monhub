@@ -71,6 +71,8 @@ async function completeTask(admin: ReturnType<typeof adminClient>, taskId: strin
   const { data: task } = await admin.from('tasks').select('*').eq('id', taskId).is('completed_at', null).maybeSingle()
   if (!task) return
   await admin.from('tasks').update({ completed_at: new Date().toISOString() }).eq('id', task.id)
+  // Plus de rappel pour une tâche faite (ex. un report encore en attente).
+  await admin.from('reminders').delete().eq('ref_id', task.id).is('sent_at', null)
 
   const rule = parseRRule(task.recurrence_rule)
   if (!rule || task.parent_id) return

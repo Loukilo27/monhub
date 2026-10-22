@@ -9,6 +9,16 @@ export const calendarApp: MiniApp = {
   icon: CalendarDays,
   color: '#3b82f6',
   Page: lazy(() => import('./CalendarPage')),
-  widgets: [],
+  widgets: [
+    {
+      id: 'upcoming',
+      name: 'Prochains rendez-vous',
+      sizes: [
+        { w: 2, h: 2 },
+        { w: 4, h: 2 },
+      ],
+      Component: lazy(() => import('./UpcomingWidget')),
+    },
+  ],
   aiActions: [],
 }

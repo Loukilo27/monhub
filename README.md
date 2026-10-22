@@ -65,6 +65,17 @@ Secrets du Vault (lus par `pg_cron`) : `project_url`, `cron_secret` (même valeu
 
 Les mini-applis programment des **rappels** (table `reminders`). Chaque minute, `pg_cron` vérifie s'il y en a d'échus et, seulement dans ce cas, appelle l'Edge Function `dispatch-reminders`. Elle les inscrit dans l'historique (`notifications`, la cloche) et envoie les push aux appareils abonnés, en respectant les réglages (applis coupées, « Ne pas déranger »). Les boutons des notifications appellent `notification-action`.
 
+### Logique partagée app / serveur
+
+`supabase/functions/_shared/` contient du code pur (sans dépendance Deno), utilisé à la fois par l'app et par les Edge Functions, et testé par Vitest :
+
+| Fichier | Rôle |
+|---|---|
+| `zonedTime.ts` | heures dans un fuseau, prochaine sonnerie d'une alarme (heure d'été comprise) |
+| `recurrence.ts` | récurrences RRULE (quotidienne, jours choisis, mensuelle, annuelle, tous les N, fin) |
+| `events.ts` | occurrences d'événements récurrents, prochain rappel « X min avant » |
+| `notificationRules.ts` | « Ne pas déranger », applis coupées |
+
 ## Ajouter une mini-appli
 
 1. Créer `src/apps/<id>/` avec :

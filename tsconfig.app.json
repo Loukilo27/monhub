@@ -23,6 +23,6 @@
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["src", "supabase/functions/_shared/zonedTime.ts", "supabase/functions/_shared/notificationRules.ts", "supabase/functions/_shared/recurrence.ts"],
+  "include": ["src", "supabase/functions/_shared/zonedTime.ts", "supabase/functions/_shared/notificationRules.ts", "supabase/functions/_shared/recurrence.ts", "supabase/functions/_shared/events.ts"],
   "exclude": ["src/sw.ts"]
 }
