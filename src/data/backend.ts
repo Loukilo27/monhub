@@ -56,6 +56,8 @@ export interface NewReminder {
   actions?: ('snooze' | 'done')[]
   sendAt: Date
   refId?: string
+  /** Pour un rappel « X minutes avant » une échéance. */
+  offsetMinutes?: number
   /** Rappel reporté : ne reprogramme pas l'occurrence suivante d'une alarme. */
   snoozed?: boolean
 }
@@ -67,7 +69,7 @@ export interface Settings {
 }
 
 /** Tables des mini-applis, accessibles par l'API générique (listRows / upsertRows / deleteRows). */
-export type AppTable = 'world_clocks' | 'alarms' | 'timers'
+export type AppTable = 'world_clocks' | 'alarms' | 'timers' | 'todo_lists' | 'tags' | 'tasks' | 'events'
 
 export type RealtimeTable = 'settings' | 'layouts' | 'notifications' | AppTable
 export type RealtimeEvent = 'INSERT' | 'UPDATE' | 'DELETE'

@@ -9,6 +9,17 @@ export const todoApp: MiniApp = {
   icon: ListChecks,
   color: '#10b981',
   Page: lazy(() => import('./TodoPage')),
-  widgets: [],
+  widgets: [
+    {
+      id: 'today',
+      name: 'Tâches du jour',
+      sizes: [
+        { w: 2, h: 2 },
+        { w: 4, h: 2 },
+        { w: 4, h: 3 },
+      ],
+      Component: lazy(() => import('./TodayWidget')),
+    },
+  ],
   aiActions: [],
 }

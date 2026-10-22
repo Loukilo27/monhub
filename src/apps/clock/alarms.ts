@@ -1,7 +1,7 @@
 import { useCallback } from 'react'
 import { nextAlarmOccurrence } from '../../../supabase/functions/_shared/zonedTime'
 import { backend } from '../../data'
-import { useSettings } from '../../data/queries'
+import { useTimeZone } from '../../data/queries'
 import { useDeleteRows, useRows, useSaveRows } from '../../data/rows'
 import type { Alarm, WorldClock } from './types'
 
@@ -41,9 +41,7 @@ export function findNextAlarm(alarms: Alarm[], now: Date, timeZone: string): { a
   return best
 }
 
-export function useTimeZone(): string {
-  return useSettings().data?.timeZone ?? 'Europe/Paris'
-}
+export { useTimeZone } from '../../data/queries'
 
 /** Villes des fuseaux horaires, dans l'ordre choisi. */
 export function useWorldClocks(): WorldClock[] {

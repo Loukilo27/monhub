@@ -50,6 +50,11 @@ export function useUpdatePreferences() {
   }
 }
 
+/** Fuseau horaire de l'utilisateur (réglages), Europe/Paris par défaut. */
+export function useTimeZone(): string {
+  return useSettings().data?.timeZone ?? 'Europe/Paris'
+}
+
 // ---------- Dispositions de l'accueil ----------
 
 export function useLayout(kind: LayoutKind) {

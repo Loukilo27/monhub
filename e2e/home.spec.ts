@@ -25,7 +25,7 @@ test.describe('Accueil sur PC', () => {
     // La disposition survit au rechargement.
     await page.reload()
     await expect(page.getByRole('link', { name: 'Notes' })).toBeVisible()
-    await expect(page.getByRole('link', { name: /Widget Horloge/ })).toContainText(/\d{2}:\d{2}/)
+    await expect(page.getByRole('group', { name: /Widget Horloge/ })).toContainText(/\d{2}:\d{2}/)
     await page.screenshot({ path: 'test-results/pc-accueil.png' })
 
     await page.getByRole('link', { name: 'Notes' }).click()

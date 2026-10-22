@@ -164,6 +164,7 @@ export const supabaseBackend: Backend = {
           url: reminder.url ?? '/',
           actions: reminder.actions ?? [],
           snoozed: reminder.snoozed ?? false,
+          offset_minutes: reminder.offsetMinutes ?? null,
           send_at: reminder.sendAt.toISOString(),
         }),
     )

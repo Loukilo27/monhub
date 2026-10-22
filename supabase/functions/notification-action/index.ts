@@ -2,6 +2,8 @@
 // Appelée par le service worker, qui n'a pas de session : l'autorisation repose sur le jeton
 // aléatoire propre à chaque rappel (action_token), transmis uniquement dans la notification.
 import { adminClient, corsHeaders, json, safeEqual } from '../_shared/admin.ts'
+import { nextOccurrence, parseRRule } from '../_shared/recurrence.ts'
+import { zonedToUtc } from '../_shared/zonedTime.ts'
 
 const SNOOZE_MINUTES = 10
 
@@ -56,10 +58,53 @@ Deno.serve(async (request) => {
     })
   }
 
-  if (action === 'done' && reminder.kind === 'task' && reminder.ref_id) {
-    // Coche la tâche liée (table créée à la phase To-do ; sans effet tant qu'elle n'existe pas).
-    await admin.from('tasks').update({ completed_at: new Date().toISOString() }).eq('id', reminder.ref_id)
-  }
+  if (action === 'done' && reminder.kind === 'task' && reminder.ref_id) await completeTask(admin, reminder.ref_id, reminder.user_id)
 
   return json(request, { ok: true })
 })
+
+/**
+ * Coche une tâche depuis sa notification. Comme dans l'app, une tâche récurrente crée
+ * l'occurrence suivante (sous-tâches remises à zéro) et son rappel.
+ */
+async function completeTask(admin: ReturnType<typeof adminClient>, taskId: string, userId: string) {
+  const { data: task } = await admin.from('tasks').select('*').eq('id', taskId).is('completed_at', null).maybeSingle()
+  if (!task) return
+  await admin.from('tasks').update({ completed_at: new Date().toISOString() }).eq('id', task.id)
+
+  const rule = parseRRule(task.recurrence_rule)
+  if (!rule || task.parent_id) return
+  const { data: settings } = await admin.from('settings').select('time_zone').eq('user_id', userId).maybeSingle()
+  const timeZone = settings?.time_zone ?? 'Europe/Paris'
+  const base = task.due_date ?? new Date().toISOString().slice(0, 10)
+  const nextDate = nextOccurrence(rule, base, base)
+  if (!nextDate) return
+
+  const nextId = crypto.randomUUID()
+  const { id: _id, created_at: _created, updated_at: _updated, ...fields } = task
+  await admin.from('tasks').insert({ ...fields, id: nextId, due_date: nextDate, completed_at: null })
+  const { data: subtasks } = await admin.from('tasks').select('*').eq('parent_id', task.id)
+  if (subtasks?.length) {
+    await admin.from('tasks').insert(
+      subtasks.map(({ id: _subId, created_at: _c, updated_at: _u, ...sub }) => ({ ...sub, id: crypto.randomUUID(), parent_id: nextId, completed_at: null })),
+    )
+  }
+
+  if (task.reminder_offset_minutes === null) return
+  const [year, month, day] = nextDate.split('-').map(Number)
+  const [hour, minute] = (task.due_time ?? '09:00').split(':').map(Number)
+  const sendAt = new Date(zonedToUtc(year, month, day, hour, minute, timeZone).getTime() - task.reminder_offset_minutes * 60_000)
+  if (sendAt.getTime() <= Date.now()) return
+  await admin.from('reminders').insert({
+    user_id: userId,
+    source: 'todo',
+    kind: 'task',
+    ref_id: nextId,
+    title: task.title,
+    body: task.due_time ? `Échéance le ${day}/${month} à ${task.due_time}` : `Échéance le ${day}/${month}`,
+    url: `/app/todo?task=${nextId}`,
+    actions: ['done', 'snooze'],
+    offset_minutes: task.reminder_offset_minutes,
+    send_at: sendAt.toISOString(),
+  })
+}

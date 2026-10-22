@@ -1,6 +1,6 @@
 import { Maximize2, X } from 'lucide-react'
 import { Component, Suspense, type ReactNode } from 'react'
-import { Link, useViewTransitionState } from 'react-router'
+import { Link, useNavigate, useViewTransitionState } from 'react-router'
 import { getApp, getWidget } from '../apps/registry'
 import type { MiniApp } from '../apps/types'
 import type { GridItem } from './types'
@@ -69,8 +69,37 @@ export function GridItemLink({ item, compact, onClickCapture }: {
   const app = getApp(item.appId)
   const to = `/app/${item.appId}`
   const transitioning = useViewTransitionState(to)
+  const navigate = useNavigate()
   if (!app) return null
-  const label = item.type === 'shortcut' ? app.name : `Widget ${getWidget(item.appId, item.widgetId)?.name ?? ''} — ouvrir ${app.name}`
+
+  if (item.type === 'widget') {
+    // Un widget peut contenir ses propres boutons (ex. cocher une tâche) : ce n'est donc pas un lien.
+    // Un clic ailleurs dans le widget ouvre la mini-appli ; au clavier, un lien dédié apparaît au focus.
+    const name = getWidget(item.appId, item.widgetId)?.name ?? ''
+    return (
+      <div
+        role="group"
+        aria-label={`Widget ${name}`}
+        onClickCapture={onClickCapture}
+        onClick={(event) => {
+          if (event.defaultPrevented || (event.target as HTMLElement).closest('button, a, input, [data-widget-action]')) return
+          navigate(to, { viewTransition: true })
+        }}
+        className="relative h-full w-full cursor-pointer rounded-3xl"
+      >
+        <GridItemContent item={item} compact={compact} />
+        <Link
+          to={to}
+          viewTransition
+          className="sr-only rounded-full bg-accent px-3 py-1 text-sm text-accent-contrast focus:not-sr-only focus:absolute focus:right-2 focus:bottom-2"
+        >
+          Ouvrir {app.name}
+        </Link>
+      </div>
+    )
+  }
+
+  const label = app.name
   return (
     <Link
       to={to}

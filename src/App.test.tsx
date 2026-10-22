@@ -80,7 +80,7 @@ describe('Accueil personnalisable', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Terminé' }))
 
     expect(await screen.findByRole('link', { name: 'Notes' })).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: /Widget Horloge/ })).toBeInTheDocument()
+    expect(screen.getByRole('group', { name: /Widget Horloge/ })).toBeInTheDocument()
     const saved = await localBackend.loadLayout('mobile')
     expect(saved?.items.map(({ type, appId, x, y, w, h }) => ({ type, appId, x, y, w, h }))).toEqual([
       { type: 'shortcut', appId: 'notes', x: 0, y: 0, w: 1, h: 1 },
