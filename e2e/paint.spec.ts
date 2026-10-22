@@ -4,8 +4,9 @@ import { expect, test, type Page } from '@playwright/test'
 async function pixel(page: Page, x: number, y: number) {
   return page.evaluate(
     ([px, py]) => {
-      const canvas = document.querySelector('canvas[aria-hidden="true"]') as HTMLCanvasElement
-      return Array.from(canvas.getContext('2d')!.getImageData(px, py, 1, 1).data.slice(0, 3))
+      // null tant que l'éditeur n'est pas affiché (expect.poll réessaie).
+      const canvas = document.querySelector('canvas[aria-hidden="true"]') as HTMLCanvasElement | null
+      return canvas ? Array.from(canvas.getContext('2d')!.getImageData(px, py, 1, 1).data.slice(0, 3)) : null
     },
     [x, y],
   )
@@ -79,7 +80,8 @@ test.describe('Mini Paint', () => {
     await expect(page.getByRole('button', { name: /^Maison/ }).locator('img')).toBeVisible()
     await page.reload()
     await page.getByRole('button', { name: /^Maison/ }).click()
-    await expect.poll(() => pixel(page, 800, 550)).toEqual([239, 68, 68])
+    await expect(page.getByRole('img', { name: 'Zone de dessin « Maison »' })).toBeVisible()
+    await expect.poll(() => pixel(page, 800, 550), { timeout: 10_000 }).toEqual([239, 68, 68])
     expect(await pixel(page, 800, 900)).toEqual([17, 24, 39])
     await page.getByRole('button', { name: 'Retour à la galerie' }).click()
 
