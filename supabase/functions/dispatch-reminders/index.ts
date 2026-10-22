@@ -3,12 +3,15 @@
 import webpush from 'npm:web-push@3.6.7'
 import { adminClient, corsHeaders, env, json, requireOwner, safeEqual } from '../_shared/admin.ts'
 import { ACTION_LABELS, shouldPush, type NotificationPreferences } from '../_shared/notificationRules.ts'
+import { nextAlarmOccurrence } from '../_shared/zonedTime.ts'
 
 interface Reminder {
   id: string
   user_id: string
   source: string
   kind: string
+  ref_id: string | null
+  snoozed: boolean
   title: string
   body: string
   url: string
@@ -22,6 +25,56 @@ interface Subscription {
   endpoint: string
   p256dh: string
   auth: string
+}
+
+/**
+ * Suites d'un rappel envoyé :
+ * - alarme (hors report) : reprogramme la prochaine sonnerie, ou désactive une alarme « une fois » ;
+ * - minuteur : le marque comme terminé.
+ * Renvoie l'alarme concernée, le cas échéant.
+ */
+async function followUp(admin: ReturnType<typeof adminClient>, reminder: Reminder, timeZone: string) {
+  if (!reminder.ref_id) return null
+  if (reminder.kind === 'timer') {
+    await admin
+      .from('timers')
+      .update({ state: 'finished', ends_at: null, remaining_seconds: 0 })
+      .eq('id', reminder.ref_id)
+      .eq('state', 'running')
+    return null
+  }
+  if (reminder.kind !== 'alarm') return null
+  const { data: alarm } = await admin
+    .from('alarms')
+    .select('id, time, days, enabled, label, snooze_minutes')
+    .eq('id', reminder.ref_id)
+    .maybeSingle()
+  if (!alarm || reminder.snoozed || !alarm.enabled) return alarm
+  if (!alarm.days.length) {
+    await admin.from('alarms').update({ enabled: false }).eq('id', alarm.id)
+    return alarm
+  }
+  // Une seule sonnerie à venir par alarme (hors reports).
+  const { count } = await admin
+    .from('reminders')
+    .select('id', { count: 'exact', head: true })
+    .eq('ref_id', alarm.id)
+    .eq('snoozed', false)
+    .is('sent_at', null)
+  if (!count) {
+    await admin.from('reminders').insert({
+      user_id: reminder.user_id,
+      source: 'clock',
+      kind: 'alarm',
+      ref_id: alarm.id,
+      title: alarm.label || 'Alarme',
+      body: `Il est ${alarm.time}`,
+      url: reminder.url,
+      actions: reminder.actions,
+      send_at: nextAlarmOccurrence(alarm, new Date(reminder.send_at), timeZone).toISOString(),
+    })
+  }
+  return alarm
 }
 
 webpush.setVapidDetails(env('VAPID_SUBJECT'), env('VAPID_PUBLIC_KEY'), env('VAPID_PRIVATE_KEY'))
@@ -45,7 +98,7 @@ Deno.serve(async (request) => {
     .eq('user_id', ownerId)
     .is('sent_at', null)
     .lte('send_at', now.toISOString())
-    .select('id, user_id, source, kind, title, body, url, actions, send_at, action_token')
+    .select('id, user_id, source, kind, ref_id, snoozed, title, body, url, actions, send_at, action_token')
   if (error) return json(request, { error: error.message }, 500)
   if (!due?.length) return json(request, { sent: 0 })
 
@@ -71,11 +124,13 @@ Deno.serve(async (request) => {
         title: reminder.title,
         body: reminder.body,
         url: reminder.url,
+        ref_id: reminder.ref_id,
         reminder_id: reminder.id,
       })
       .select('id')
       .single()
 
+    const alarm = await followUp(admin, reminder, timeZone)
     if (!shouldPush(reminder, prefs, now, timeZone)) continue
 
     const urgent = reminder.kind === 'alarm' || reminder.kind === 'timer'
@@ -89,7 +144,12 @@ Deno.serve(async (request) => {
       reminderId: reminder.id,
       token: reminder.action_token,
       actionUrl: `${env('SUPABASE_URL')}/functions/v1/notification-action`,
-      actions: reminder.actions.filter((action) => ACTION_LABELS[action]).map((action) => ({ action, title: ACTION_LABELS[action] })),
+      actions: reminder.actions
+        .filter((action) => ACTION_LABELS[action])
+        .map((action) => ({
+          action,
+          title: action === 'snooze' && alarm ? `Reporter ${alarm.snooze_minutes} min` : ACTION_LABELS[action],
+        })),
       requireInteraction: urgent,
     })
 

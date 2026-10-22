@@ -5,7 +5,6 @@ import type { AppNotification, NewReminder, NotificationPreferences } from '../d
 import { backend } from '../data'
 import { queryKeys as baseKeys, useSettings, useUpdatePreferences } from '../data/queries'
 import { rowToNotification } from '../data/supabaseBackend'
-import { playAlarmChime } from './sound'
 
 export const notificationKeys = {
   list: ['notifications'] as const,
@@ -77,7 +76,7 @@ export function useUpdateNotificationPreferences() {
 
 /**
  * Nouvelles notifications en temps réel : ajoutées sous la cloche et, app ouverte,
- * affichées en toast (avec une sonnerie pour les alarmes et minuteurs).
+ * affichées en toast (les alarmes et minuteurs déclenchent l'écran de sonnerie).
  */
 export function useNotificationsRealtime() {
   const queryClient = useQueryClient()
@@ -96,8 +95,12 @@ export function useNotificationsRealtime() {
         )
         const settings = queryClient.getQueryData<{ preferences?: { notifications?: NotificationPreferences } }>(baseKeys.settings)
         if (settings?.preferences?.notifications?.disabledApps?.includes(notification.source)) return
+        // Alarmes et minuteurs : l'écran de sonnerie de l'Horloge prend le relais (pas de simple toast).
+        if (notification.kind === 'alarm' || notification.kind === 'timer') {
+          window.dispatchEvent(new CustomEvent('monhub:ring', { detail: notification }))
+          return
+        }
         toast(notification.body ? `${notification.title} — ${notification.body}` : notification.title, 'info')
-        if (notification.kind === 'alarm' || notification.kind === 'timer') playAlarmChime()
       }),
     [queryClient, toast],
   )

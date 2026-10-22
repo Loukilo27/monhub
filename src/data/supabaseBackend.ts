@@ -1,7 +1,7 @@
 import type { Layout, LayoutKind } from '../home/types'
 import { requireSupabase } from '../lib/supabase'
 import { isThemePreference } from '../theme/theme'
-import type { AppNotification, Backend, Preferences, Settings } from './backend'
+import type { AppNotification, AppTable, Backend, Preferences, Settings } from './backend'
 
 async function userId(): Promise<string> {
   const { data } = await requireSupabase().auth.getSession()
@@ -38,6 +38,7 @@ export function rowToNotification(row: Record<string, unknown>): AppNotification
     title: String(row.title ?? ''),
     body: String(row.body ?? ''),
     url: String(row.url ?? '/'),
+    refId: (row.ref_id as string | null) ?? null,
     readAt: (row.read_at as string | null) ?? null,
     createdAt: String(row.created_at ?? new Date().toISOString()),
   }
@@ -94,7 +95,7 @@ export const supabaseBackend: Backend = {
     const { data } = check(
       await requireSupabase()
         .from('notifications')
-        .select('id, source, kind, title, body, url, read_at, created_at')
+        .select('id, source, kind, title, body, url, ref_id, read_at, created_at')
         .order('created_at', { ascending: false })
         .limit(100),
     )
@@ -162,9 +163,27 @@ export const supabaseBackend: Backend = {
           body: reminder.body ?? '',
           url: reminder.url ?? '/',
           actions: reminder.actions ?? [],
+          snoozed: reminder.snoozed ?? false,
           send_at: reminder.sendAt.toISOString(),
         }),
     )
+  },
+
+  async cancelReminders(refId) {
+    check(await requireSupabase().from('reminders').delete().eq('ref_id', refId).is('sent_at', null))
+  },
+
+  async listRows<T extends { id: string }>(table: AppTable) {
+    const { data } = check(await requireSupabase().from(table).select('*').order('created_at'))
+    return (data ?? []).map(({ user_id: _userId, created_at: _createdAt, updated_at: _updatedAt, ...row }) => row) as T[]
+  },
+
+  async upsertRows(table, rows) {
+    if (rows.length) check(await requireSupabase().from(table).upsert(rows))
+  },
+
+  async deleteRows(table, ids) {
+    if (ids.length) check(await requireSupabase().from(table).delete().in('id', ids))
   },
 
   async dispatchNow() {

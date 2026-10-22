@@ -36,6 +36,12 @@ Deno.serve(async (request) => {
     .is('read_at', null)
 
   if (action === 'snooze') {
+    // Durée de report propre à l'alarme, 10 minutes sinon.
+    let minutes = SNOOZE_MINUTES
+    if (reminder.kind === 'alarm' && reminder.ref_id) {
+      const { data: alarm } = await admin.from('alarms').select('snooze_minutes').eq('id', reminder.ref_id).maybeSingle()
+      minutes = alarm?.snooze_minutes ?? SNOOZE_MINUTES
+    }
     await admin.from('reminders').insert({
       user_id: reminder.user_id,
       source: reminder.source,
@@ -45,7 +51,8 @@ Deno.serve(async (request) => {
       body: reminder.body,
       url: reminder.url,
       actions: reminder.actions,
-      send_at: new Date(Date.now() + SNOOZE_MINUTES * 60_000).toISOString(),
+      snoozed: true,
+      send_at: new Date(Date.now() + minutes * 60_000).toISOString(),
     })
   }
 

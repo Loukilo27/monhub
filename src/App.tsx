@@ -1,6 +1,7 @@
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client'
 import { useState, type ReactNode } from 'react'
 import { createHashRouter, Outlet, RouterProvider, type RouteObject } from 'react-router'
+import { ClockRinger } from './apps/clock/ClockRinger'
 import { AuthGate } from './auth/AuthGate'
 import { AuthProvider } from './auth/AuthProvider'
 import { DemoAuthProvider } from './auth/DemoAuthProvider'
@@ -26,7 +27,12 @@ function RootLayout() {
   useSettingsSync()
   useRealtimeSync()
   useNotificationLinks()
-  return <Outlet />
+  return (
+    <>
+      <Outlet />
+      <ClockRinger />
+    </>
+  )
 }
 
 const routes: RouteObject[] = [

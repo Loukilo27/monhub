@@ -20,6 +20,24 @@ export const clockApp: MiniApp = {
       ],
       Component: lazy(() => import('./ClockWidget')),
     },
+    {
+      id: 'world-clocks',
+      name: 'Fuseaux horaires',
+      sizes: [
+        { w: 4, h: 2 },
+        { w: 2, h: 2 },
+      ],
+      Component: lazy(() => import('./WorldClocksWidget')),
+    },
+    {
+      id: 'next-alarm',
+      name: 'Prochaine alarme',
+      sizes: [
+        { w: 2, h: 1 },
+        { w: 4, h: 1 },
+      ],
+      Component: lazy(() => import('./NextAlarmWidget')),
+    },
   ],
   aiActions: [],
 }

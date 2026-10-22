@@ -1,6 +1,7 @@
 import type { Layout, LayoutKind } from '../home/types'
-import type { AppNotification, Backend, RealtimeEvent, Settings } from './backend'
+import type { AppNotification, AppTable, Backend, RealtimeEvent, Settings } from './backend'
 
+const pendingReminders = new Map<string, ReturnType<typeof setTimeout>[]>()
 const listeners = new Set<(row: Record<string, unknown>, event: RealtimeEvent) => void>()
 
 /**
@@ -87,15 +88,33 @@ export const localBackend: Backend = {
         title: reminder.title,
         body: reminder.body ?? '',
         url: reminder.url ?? '/',
+        refId: reminder.refId ?? null,
         readAt: null,
         createdAt: new Date().toISOString(),
       }
       write('notifications', [notification, ...(read<AppNotification[]>('notifications') ?? [])])
-      listeners.forEach((listener) => listener(notification as unknown as Record<string, unknown>, 'INSERT'))
+      const row = { ...notification, ref_id: notification.refId, read_at: null, created_at: notification.createdAt }
+      listeners.forEach((listener) => listener(row, 'INSERT'))
     }
-    setTimeout(deliver, Math.max(0, reminder.sendAt.getTime() - Date.now()))
+    const timeout = setTimeout(deliver, Math.max(0, reminder.sendAt.getTime() - Date.now()))
+    if (reminder.refId) pendingReminders.set(reminder.refId, [...(pendingReminders.get(reminder.refId) ?? []), timeout])
+  },
+  async cancelReminders(refId) {
+    pendingReminders.get(refId)?.forEach(clearTimeout)
+    pendingReminders.delete(refId)
   },
   async dispatchNow() {},
+  async listRows<T extends { id: string }>(table: AppTable) {
+    return read<T[]>(`rows.${table}`) ?? []
+  },
+  async upsertRows<T extends { id: string }>(table: AppTable, rows: T[]) {
+    const byId = new Map((read<T[]>(`rows.${table}`) ?? []).map((row) => [row.id, row]))
+    for (const row of rows) byId.set(row.id, { ...byId.get(row.id), ...row })
+    write(`rows.${table}`, [...byId.values()])
+  },
+  async deleteRows(table, ids) {
+    write(`rows.${table}`, (read<{ id: string }[]>(`rows.${table}`) ?? []).filter((row) => !ids.includes(row.id)))
+  },
   subscribe(table, onChange) {
     if (table !== 'notifications') return () => {}
     listeners.add(onChange)

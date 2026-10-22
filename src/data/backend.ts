@@ -33,6 +33,8 @@ export interface AppNotification {
   title: string
   body: string
   url: string
+  /** Élément concerné (alarme, minuteur, tâche…). */
+  refId: string | null
   readAt: string | null
   createdAt: string
 }
@@ -54,6 +56,8 @@ export interface NewReminder {
   actions?: ('snooze' | 'done')[]
   sendAt: Date
   refId?: string
+  /** Rappel reporté : ne reprogramme pas l'occurrence suivante d'une alarme. */
+  snoozed?: boolean
 }
 
 export interface Settings {
@@ -62,7 +66,10 @@ export interface Settings {
   preferences: Preferences
 }
 
-export type RealtimeTable = 'settings' | 'layouts' | 'notifications'
+/** Tables des mini-applis, accessibles par l'API générique (listRows / upsertRows / deleteRows). */
+export type AppTable = 'world_clocks' | 'alarms' | 'timers'
+
+export type RealtimeTable = 'settings' | 'layouts' | 'notifications' | AppTable
 export type RealtimeEvent = 'INSERT' | 'UPDATE' | 'DELETE'
 
 /**
@@ -89,8 +96,15 @@ export interface Backend {
   deletePushDevice(id: string): Promise<void>
 
   createReminder(reminder: NewReminder): Promise<void>
+  /** Annule les rappels pas encore envoyés d'un élément (alarme désactivée, minuteur en pause…). */
+  cancelReminders(refId: string): Promise<void>
   /** Demande l'envoi immédiat des rappels échus (sans attendre la minute suivante). */
   dispatchNow(): Promise<void>
+
+  listRows<T extends { id: string }>(table: AppTable): Promise<T[]>
+  /** Crée ou met à jour des lignes (clé : id). */
+  upsertRows<T extends { id: string }>(table: AppTable, rows: T[]): Promise<void>
+  deleteRows(table: AppTable, ids: string[]): Promise<void>
 
   /** Écoute les modifications faites ailleurs (autre appareil). Renvoie la fonction de désabonnement. */
   subscribe(table: RealtimeTable, onChange: (row: Record<string, unknown>, event: RealtimeEvent) => void): () => void
