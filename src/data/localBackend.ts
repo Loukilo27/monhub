@@ -129,6 +129,11 @@ export const localBackend: Backend = {
   async removeFiles(bucket, names) {
     for (const name of names) localStorage.removeItem(`${PREFIX}file.${bucket}/${name}`)
   },
+  async callFunction<T>(name: string, body: Record<string, unknown>) {
+    // Démo : réponses factices, chargées à la demande.
+    const { demoFunction } = await import('./demoFunctions')
+    return demoFunction(name, body) as T
+  },
   subscribe(table, onChange) {
     if (table !== 'notifications') return () => {}
     listeners.add(onChange)

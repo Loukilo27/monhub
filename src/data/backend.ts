@@ -24,6 +24,18 @@ export interface NotificationPreferences {
 export interface Preferences {
   wallpaper?: Wallpaper
   notifications?: NotificationPreferences
+  music?: { lastfmUser?: string }
+}
+
+/** Erreur renvoyée par une Edge Function : code court + message lisible. */
+export class FunctionError extends Error {
+  code: string
+  status: number
+  constructor(code: string, message: string, status = 0) {
+    super(message)
+    this.code = code
+    this.status = status
+  }
 }
 
 export interface AppNotification {
@@ -69,7 +81,7 @@ export interface Settings {
 }
 
 /** Tables des mini-applis, accessibles par l'API générique (listRows / upsertRows / deleteRows). */
-export type AppTable = 'world_clocks' | 'alarms' | 'timers' | 'todo_lists' | 'tags' | 'tasks' | 'events' | 'notes' | 'drawings'
+export type AppTable = 'world_clocks' | 'alarms' | 'timers' | 'todo_lists' | 'tags' | 'tasks' | 'events' | 'notes' | 'drawings' | 'music_playlists'
 
 /** Buckets de fichiers privés (chaque utilisateur n'accède qu'à son dossier). */
 export type FileBucket = 'drawings'
@@ -117,6 +129,9 @@ export interface Backend {
   /** Liens temporaires (1 h) pour afficher des fichiers. */
   fileUrls(bucket: FileBucket, names: string[]): Promise<Record<string, string>>
   removeFiles(bucket: FileBucket, names: string[]): Promise<void>
+
+  /** Appelle une Edge Function (en tant que propriétaire) et renvoie sa réponse JSON. */
+  callFunction<T>(name: string, body: Record<string, unknown>): Promise<T>
 
   /** Écoute les modifications faites ailleurs (autre appareil). Renvoie la fonction de désabonnement. */
   subscribe(table: RealtimeTable, onChange: (row: Record<string, unknown>, event: RealtimeEvent) => void): () => void

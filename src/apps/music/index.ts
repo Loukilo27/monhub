@@ -9,6 +9,26 @@ export const musicApp: MiniApp = {
   icon: Music,
   color: '#ec4899',
   Page: lazy(() => import('./MusicPage')),
-  widgets: [],
+  widgets: [
+    {
+      id: 'now-playing',
+      name: 'En écoute',
+      sizes: [
+        { w: 2, h: 1 },
+        { w: 4, h: 1 },
+        { w: 4, h: 2 },
+      ],
+      Component: lazy(() => import('./NowPlayingWidget')),
+    },
+    {
+      id: 'top-artists',
+      name: 'Top artistes du mois',
+      sizes: [
+        { w: 2, h: 2 },
+        { w: 4, h: 2 },
+      ],
+      Component: lazy(() => import('./TopArtistsWidget')),
+    },
+  ],
   aiActions: [],
 }

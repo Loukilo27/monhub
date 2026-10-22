@@ -58,7 +58,7 @@ L'outil en ligne de commande Supabase est installé avec le projet (`npx supabas
 | `npx supabase secrets set NOM=valeur` | définit un secret des Edge Functions |
 | `npx supabase config push` | applique les réglages d'authentification de `supabase/config.toml` |
 
-Secrets des Edge Functions (jamais dans le dépôt) : `OWNER_USER_ID`, `CRON_SECRET`, `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`, `ALLOWED_ORIGINS`.
+Secrets des Edge Functions (jamais dans le dépôt) : `OWNER_USER_ID`, `CRON_SECRET`, `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`, `ALLOWED_ORIGINS`, `LASTFM_API_KEY`.
 Secrets du Vault (lus par `pg_cron`) : `project_url`, `cron_secret` (même valeur que `CRON_SECRET`).
 
 ### Notifications

@@ -421,3 +421,6 @@ verify_jwt = false
 
 [functions.notification-action]
 verify_jwt = false
+
+[functions.lastfm]
+verify_jwt = false

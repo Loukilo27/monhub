@@ -1,7 +1,7 @@
 import type { Layout, LayoutKind } from '../home/types'
 import { requireSupabase } from '../lib/supabase'
 import { isThemePreference } from '../theme/theme'
-import type { AppNotification, AppTable, Backend, FileBucket, Preferences, Settings } from './backend'
+import { FunctionError, type AppNotification, type AppTable, type Backend, type FileBucket, type Preferences, type Settings } from './backend'
 
 async function userId(): Promise<string> {
   const { data } = await requireSupabase().auth.getSession()
@@ -214,6 +214,17 @@ export const supabaseBackend: Backend = {
     if (!names.length) return
     const folder = await userId()
     await requireSupabase().storage.from(bucket).remove(names.map((name) => `${folder}/${name}`))
+  },
+
+  async callFunction<T>(name: string, body: Record<string, unknown>) {
+    const { data, error } = await requireSupabase().functions.invoke(name, { body })
+    if (error) {
+      // Corps JSON { error, message } renvoyé par nos fonctions en cas d'échec.
+      const response = (error as { context?: Response }).context
+      const details = response ? ((await response.json().catch(() => null)) as { error?: string; message?: string } | null) : null
+      throw new FunctionError(details?.error ?? 'network', details?.message ?? 'Service indisponible. Vérifie ta connexion.', response?.status ?? 0)
+    }
+    return data as T
   },
 
   subscribe(table, onChange) {
