@@ -1,8 +1,9 @@
-import { Bell, Settings, Sparkles } from 'lucide-react'
+import { Settings, Sparkles } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { Link } from 'react-router'
 import { formatLongDate, formatTime } from '../lib/time'
 import { useNowMinute } from '../lib/useNow'
+import { NotificationBell } from '../notifications/NotificationBell'
 import { IconButton } from './IconButton'
 import { ThemeToggle } from './ThemeToggle'
 
@@ -19,13 +20,11 @@ export function StatusBar({ editAction }: { editAction?: ReactNode }) {
       </div>
       <nav aria-label="Barre d'état" className="flex items-center text-[color:inherit] [&_button]:text-[color:inherit]">
         {editAction}
-        {/* L'assistant IA (phase 10) et les notifications (phase 4) arrivent plus tard. */}
+        {/* L'assistant IA arrive à la phase 10. */}
         <IconButton label="Assistant IA (bientôt disponible)" disabled>
           <Sparkles aria-hidden className="size-5" />
         </IconButton>
-        <IconButton label="Notifications (bientôt disponible)" disabled>
-          <Bell aria-hidden className="size-5" />
-        </IconButton>
+        <NotificationBell />
         <ThemeToggle />
         <Link
           to="/settings"

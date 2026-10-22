@@ -98,13 +98,13 @@ export function useRealtimeSync() {
   const queryClient = useQueryClient()
 
   useEffect(() => {
-    const stopSettings = backend.subscribe('settings', (row) => {
-      if (queryClient.isMutating({ mutationKey: ['settings'] })) return
+    const stopSettings = backend.subscribe('settings', (row, event) => {
+      if (event === 'DELETE' || queryClient.isMutating({ mutationKey: ['settings'] })) return
       queryClient.setQueryData(queryKeys.settings, rowToSettings(row))
     })
-    const stopLayouts = backend.subscribe('layouts', (row) => {
+    const stopLayouts = backend.subscribe('layouts', (row, event) => {
       const kind = row.kind
-      if (kind !== 'desktop' && kind !== 'mobile') return
+      if (event === 'DELETE' || (kind !== 'desktop' && kind !== 'mobile')) return
       // Ignore l'écho de nos propres enregistrements en cours.
       if (queryClient.isMutating({ mutationKey: ['layout', kind] })) return
       queryClient.setQueryData(queryKeys.layout(kind), sanitizeLayout(rowToLayout(row), GRID_SPECS[kind]))

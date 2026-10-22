@@ -11,6 +11,7 @@ import { useRealtimeSync } from './data/queries'
 import { persistOptions, queryClient } from './data/queryClient'
 import { useKeyboardShortcuts } from './lib/useKeyboardShortcuts'
 import { isSupabaseConfigured } from './lib/supabase'
+import { useNotificationLinks } from './notifications/useNotificationLinks'
 import AppPage from './pages/AppPage'
 import HomePage from './pages/HomePage'
 import NotConfiguredPage from './pages/NotConfiguredPage'
@@ -19,11 +20,12 @@ import SettingsPage from './pages/SettingsPage'
 import { useSettingsSync } from './settings/settingsSync'
 import { ThemeProvider } from './theme/ThemeProvider'
 
-/** Racine des pages connectées : raccourcis clavier, synchronisation des réglages et temps réel. */
+/** Racine des pages connectées : raccourcis clavier, synchronisation, temps réel et notifications. */
 function RootLayout() {
   useKeyboardShortcuts()
   useSettingsSync()
   useRealtimeSync()
+  useNotificationLinks()
   return <Outlet />
 }
 

@@ -1,7 +1,7 @@
 import type { Layout, LayoutKind } from '../home/types'
 import { requireSupabase } from '../lib/supabase'
 import { isThemePreference } from '../theme/theme'
-import type { Backend, Preferences, Settings } from './backend'
+import type { AppNotification, Backend, Preferences, Settings } from './backend'
 
 async function userId(): Promise<string> {
   const { data } = await requireSupabase().auth.getSession()
@@ -27,6 +27,19 @@ export function rowToLayout(row: Record<string, unknown>): Layout {
   return {
     items: Array.isArray(row.items) ? row.items : [],
     pageCount: typeof row.page_count === 'number' ? row.page_count : 1,
+  }
+}
+
+export function rowToNotification(row: Record<string, unknown>): AppNotification {
+  return {
+    id: String(row.id),
+    source: String(row.source ?? 'system'),
+    kind: String(row.kind ?? 'info'),
+    title: String(row.title ?? ''),
+    body: String(row.body ?? ''),
+    url: String(row.url ?? '/'),
+    readAt: (row.read_at as string | null) ?? null,
+    createdAt: String(row.created_at ?? new Date().toISOString()),
   }
 }
 
@@ -77,6 +90,88 @@ export const supabaseBackend: Backend = {
     return data.signedUrl
   },
 
+  async listNotifications() {
+    const { data } = check(
+      await requireSupabase()
+        .from('notifications')
+        .select('id, source, kind, title, body, url, read_at, created_at')
+        .order('created_at', { ascending: false })
+        .limit(100),
+    )
+    return (data ?? []).map(rowToNotification)
+  },
+
+  async markNotificationsRead(ids) {
+    let query = requireSupabase().from('notifications').update({ read_at: new Date().toISOString() }).is('read_at', null)
+    if (ids !== 'all') query = query.in('id', ids)
+    check(await query)
+  },
+
+  async clearNotifications() {
+    check(await requireSupabase().from('notifications').delete().eq('user_id', await userId()))
+  },
+
+  async listPushDevices() {
+    const { data } = check(
+      await requireSupabase()
+        .from('push_subscriptions')
+        .select('id, endpoint, device_label, last_seen_at, last_success_at')
+        .order('last_seen_at', { ascending: false }),
+    )
+    return (data ?? []).map((row) => ({
+      id: row.id,
+      endpoint: row.endpoint,
+      deviceLabel: row.device_label,
+      lastSeenAt: row.last_seen_at,
+      lastSuccessAt: row.last_success_at,
+    }))
+  },
+
+  async savePushSubscription(subscription, deviceLabel) {
+    check(
+      await requireSupabase()
+        .from('push_subscriptions')
+        .upsert(
+          {
+            user_id: await userId(),
+            endpoint: subscription.endpoint,
+            p256dh: subscription.keys?.p256dh,
+            auth: subscription.keys?.auth,
+            device_label: deviceLabel,
+            last_seen_at: new Date().toISOString(),
+          },
+          { onConflict: 'endpoint' },
+        ),
+    )
+  },
+
+  async deletePushDevice(id) {
+    check(await requireSupabase().from('push_subscriptions').delete().eq('id', id))
+  },
+
+  async createReminder(reminder) {
+    check(
+      await requireSupabase()
+        .from('reminders')
+        .insert({
+          user_id: await userId(),
+          source: reminder.source,
+          kind: reminder.kind,
+          ref_id: reminder.refId ?? null,
+          title: reminder.title,
+          body: reminder.body ?? '',
+          url: reminder.url ?? '/',
+          actions: reminder.actions ?? [],
+          send_at: reminder.sendAt.toISOString(),
+        }),
+    )
+  },
+
+  async dispatchNow() {
+    const { error } = await requireSupabase().functions.invoke('dispatch-reminders', { body: {} })
+    if (error) throw new Error(error.message)
+  },
+
   subscribe(table, onChange) {
     const supabase = requireSupabase()
     let channel: ReturnType<typeof supabase.channel> | null = null
@@ -86,7 +181,8 @@ export const supabaseBackend: Backend = {
       channel = supabase
         .channel(`${table}:${id}`)
         .on('postgres_changes', { event: '*', schema: 'public', table, filter: `user_id=eq.${id}` }, (payload) => {
-          if (payload.new && Object.keys(payload.new).length > 0) onChange(payload.new as Record<string, unknown>)
+          const row = (payload.eventType === 'DELETE' ? payload.old : payload.new) as Record<string, unknown>
+          onChange(row ?? {}, payload.eventType)
         })
         .subscribe()
     })

@@ -23,7 +23,11 @@ Le code de MonHub est public (c'est la condition pour héberger gratuitement sur
    Ce modèle est appliqué à chaque nouvelle table par la fonction `private.secure_table()` (voir `supabase/migrations/`).
 4. **Stockage de fichiers privé.** Les dessins et images sont dans un bucket privé soumis à la même règle.
 5. **Les clés secrètes ne quittent jamais le serveur.** Gemini, Last.fm, la clé VAPID privée et la clé `service_role` sont stockées uniquement dans les secrets des Edge Functions Supabase. Elles ne sont ni dans le code, ni dans git, ni dans le navigateur.
-6. **Edge Functions verrouillées.** Chaque fonction vérifie le jeton de connexion et refuse tout utilisateur autre que le propriétaire (`OWNER_USER_ID`, stocké en secret).
+6. **Edge Functions verrouillées.** Chaque fonction vérifie qui l'appelle et refuse tout le reste :
+   - appel par l'app : jeton de connexion vérifié (signature, expiration), qui doit appartenir au propriétaire (`OWNER_USER_ID`, stocké en secret) **et** être de niveau `aal2` (2FA) ;
+   - appel par `pg_cron` (envoi des rappels chaque minute) : secret partagé (`CRON_SECRET`), stocké dans les secrets des fonctions et dans **Supabase Vault** côté base, jamais dans le dépôt ;
+   - boutons des notifications (« Reporter », « Marquer comme fait ») : le service worker n'a pas de session ; chaque rappel porte un **jeton aléatoire de 192 bits** qui n'autorise que ces deux actions, sur ce seul rappel. Il ne permet de lire aucune donnée.
+7. **Notifications push chiffrées.** Le contenu est chiffré de bout en bout (Web Push, RFC 8291) avec les clés de chaque appareil : le service de push du navigateur (Google, Microsoft) ne peut pas le lire. La clé VAPID privée qui signe les envois n'existe que dans les secrets des fonctions.
 
 ## Ce qu'il ne faut jamais faire
 

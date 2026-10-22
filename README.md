@@ -47,6 +47,24 @@ Chaque push sur `main` déclenche `.github/workflows/deploy.yml` : vérification
 
 Secrets du dépôt à créer (Settings → Secrets and variables → Actions) : `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`.
 
+## Supabase : base, fonctions et secrets
+
+L'outil en ligne de commande Supabase est installé avec le projet (`npx supabase …`). Une fois connecté (`npx supabase login`) et relié au projet (`npx supabase link --project-ref <ref>`) :
+
+| Commande | Rôle |
+|---|---|
+| `npx supabase db push` | applique les nouvelles migrations de `supabase/migrations/` |
+| `npx supabase functions deploy --use-api` | déploie les Edge Functions de `supabase/functions/` |
+| `npx supabase secrets set NOM=valeur` | définit un secret des Edge Functions |
+| `npx supabase config push` | applique les réglages d'authentification de `supabase/config.toml` |
+
+Secrets des Edge Functions (jamais dans le dépôt) : `OWNER_USER_ID`, `CRON_SECRET`, `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`, `ALLOWED_ORIGINS`.
+Secrets du Vault (lus par `pg_cron`) : `project_url`, `cron_secret` (même valeur que `CRON_SECRET`).
+
+### Notifications
+
+Les mini-applis programment des **rappels** (table `reminders`). Chaque minute, `pg_cron` vérifie s'il y en a d'échus et, seulement dans ce cas, appelle l'Edge Function `dispatch-reminders`. Elle les inscrit dans l'historique (`notifications`, la cloche) et envoie les push aux appareils abonnés, en respectant les réglages (applis coupées, « Ne pas déranger »). Les boutons des notifications appellent `notification-action`.
+
 ## Ajouter une mini-appli
 
 1. Créer `src/apps/<id>/` avec :

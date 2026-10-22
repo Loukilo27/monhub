@@ -2,6 +2,7 @@ import { LogOut, ShieldCheck } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { useAuth } from '../auth/useAuth'
 import { PageHeader } from '../components/PageHeader'
+import { NotificationSettings } from '../notifications/NotificationSettings'
 import { THEME_OPTIONS } from '../theme/theme'
 import { useSetTheme } from '../settings/settingsSync'
 import { WallpaperSettings } from '../settings/WallpaperSettings'
@@ -57,6 +58,9 @@ export default function SettingsPage() {
               </button>
             ))}
           </div>
+        </Section>
+        <Section title="Notifications">
+          <NotificationSettings />
         </Section>
         <Section title="Fond d’écran">
           <WallpaperSettings />

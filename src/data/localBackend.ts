@@ -1,5 +1,7 @@
 import type { Layout, LayoutKind } from '../home/types'
-import type { Backend, Settings } from './backend'
+import type { AppNotification, Backend, RealtimeEvent, Settings } from './backend'
+
+const listeners = new Set<(row: Record<string, unknown>, event: RealtimeEvent) => void>()
 
 /**
  * Données en localStorage, pour le mode démo (développement, tests de bout en bout).
@@ -56,7 +58,47 @@ export const localBackend: Backend = {
     if (!url) throw new Error('Fond d’écran introuvable.')
     return url
   },
-  subscribe() {
-    return () => {}
+  async listNotifications() {
+    return read<AppNotification[]>('notifications') ?? []
+  },
+  async markNotificationsRead(ids) {
+    const now = new Date().toISOString()
+    const list = read<AppNotification[]>('notifications') ?? []
+    write(
+      'notifications',
+      list.map((item) => (ids === 'all' || ids.includes(item.id) ? { ...item, readAt: item.readAt ?? now } : item)),
+    )
+  },
+  async clearNotifications() {
+    write('notifications', [])
+  },
+  async listPushDevices() {
+    return []
+  },
+  async savePushSubscription() {},
+  async deletePushDevice() {},
+  async createReminder(reminder) {
+    // Démo : la notification apparaît à l'heure prévue si l'onglet est ouvert.
+    const deliver = () => {
+      const notification: AppNotification = {
+        id: crypto.randomUUID(),
+        source: reminder.source,
+        kind: reminder.kind,
+        title: reminder.title,
+        body: reminder.body ?? '',
+        url: reminder.url ?? '/',
+        readAt: null,
+        createdAt: new Date().toISOString(),
+      }
+      write('notifications', [notification, ...(read<AppNotification[]>('notifications') ?? [])])
+      listeners.forEach((listener) => listener(notification as unknown as Record<string, unknown>, 'INSERT'))
+    }
+    setTimeout(deliver, Math.max(0, reminder.sendAt.getTime() - Date.now()))
+  },
+  async dispatchNow() {},
+  subscribe(table, onChange) {
+    if (table !== 'notifications') return () => {}
+    listeners.add(onChange)
+    return () => listeners.delete(onChange)
   },
 }

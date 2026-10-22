@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatLongDate, formatTime, msUntilNextMinute } from './time'
+import { formatLongDate, formatRelative, formatTime, msUntilNextMinute } from './time'
 
 describe('formatTime', () => {
   it('affiche l’heure de Paris au format 24 h', () => {
@@ -17,6 +17,16 @@ describe('formatTime', () => {
 describe('formatLongDate', () => {
   it('écrit la date en français avec une majuscule', () => {
     expect(formatLongDate(new Date('2026-10-22T10:00:00Z'))).toBe('Jeudi 22 octobre')
+  })
+})
+
+describe('formatRelative', () => {
+  const now = new Date('2026-10-22T14:00:00Z')
+  it('écrit une durée relative en français', () => {
+    expect(formatRelative(new Date('2026-10-22T13:59:30Z'), now)).toBe('à l’instant')
+    expect(formatRelative(new Date('2026-10-22T13:55:00Z'), now)).toBe('il y a 5 min')
+    expect(formatRelative(new Date('2026-10-22T11:00:00Z'), now)).toBe('il y a 3 h')
+    expect(formatRelative(new Date('2026-10-12T06:30:00Z'), now)).toBe('12 oct., 08:30')
   })
 })
 

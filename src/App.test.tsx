@@ -115,6 +115,40 @@ describe('Accueil personnalisable', () => {
   })
 })
 
+describe('Notifications', () => {
+  it('affiche une notification reçue sous la cloche, puis la marque comme lue', async () => {
+    renderApp()
+    await screen.findByRole('button', { name: 'Notifications' })
+    await localBackend.createReminder({
+      source: 'todo',
+      kind: 'task',
+      title: 'Appeler le garage',
+      body: 'Avant midi',
+      url: '/app/todo',
+      sendAt: new Date(),
+    })
+    const bell = await screen.findByRole('button', { name: 'Notifications : 1 non lue' })
+    // Toast affiché pendant que l'app est ouverte.
+    expect(await screen.findByText('Appeler le garage — Avant midi')).toBeInTheDocument()
+
+    await userEvent.click(bell)
+    const panel = await screen.findByRole('dialog', { name: 'Notifications' })
+    expect(within(panel).getByText('Appeler le garage')).toBeInTheDocument()
+    await userEvent.click(within(panel).getByRole('button', { name: 'Tout marquer comme lu' }))
+    await waitFor(async () => expect((await localBackend.listNotifications())[0].readAt).not.toBeNull())
+    expect(screen.getByRole('button', { name: 'Notifications' })).toBeInTheDocument()
+  })
+
+  it('ne montre pas de toast pour une mini-appli coupée', async () => {
+    await localBackend.saveSettings({ preferences: { notifications: { disabledApps: ['calendar'] } } })
+    renderApp()
+    await screen.findByRole('button', { name: 'Notifications' })
+    await localBackend.createReminder({ source: 'calendar', kind: 'event', title: 'Dentiste', sendAt: new Date() })
+    await screen.findByRole('button', { name: 'Notifications : 1 non lue' })
+    expect(screen.queryByText('Dentiste')).not.toBeInTheDocument()
+  })
+})
+
 describe('Accès protégé', () => {
   it('demande de se connecter sans session, sans proposer d’inscription', async () => {
     renderApp({ signedIn: false })
