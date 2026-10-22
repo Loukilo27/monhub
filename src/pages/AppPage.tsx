@@ -1,6 +1,7 @@
 import { Suspense, useEffect } from 'react'
 import { useParams } from 'react-router'
 import { getApp } from '../apps/registry'
+import { AssistantFloatingButton } from '../assistant/AssistantButton'
 import { PageHeader } from '../components/PageHeader'
 import { Spinner } from '../components/Spinner'
 import NotFoundPage from './NotFoundPage'
@@ -39,6 +40,7 @@ export default function AppPage() {
           <app.Page />
         </Suspense>
       </main>
+      <AssistantFloatingButton />
     </div>
   )
 }

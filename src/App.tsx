@@ -2,6 +2,7 @@ import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client
 import { useState, type ReactNode } from 'react'
 import { createHashRouter, Outlet, RouterProvider, type RouteObject } from 'react-router'
 import { ClockRinger } from './apps/clock/ClockRinger'
+import { AssistantProvider } from './assistant/AssistantProvider'
 import { AuthGate } from './auth/AuthGate'
 import { AuthProvider } from './auth/AuthProvider'
 import { DemoAuthProvider } from './auth/DemoAuthProvider'
@@ -31,10 +32,10 @@ function RootLayout() {
   useRowsRealtime(['todo_lists', 'tags', 'tasks', 'events', 'notes', 'drawings', 'music_playlists'])
   useNotificationLinks()
   return (
-    <>
+    <AssistantProvider>
       <Outlet />
       <ClockRinger />
-    </>
+    </AssistantProvider>
   )
 }
 

@@ -1,5 +1,6 @@
 import type { ComponentType, LazyExoticComponent } from 'react'
 import type { LucideIcon } from 'lucide-react'
+import type { AiTool } from '../assistant/types'
 
 /** Taille d'un widget en cases de grille : colonnes × lignes. */
 export interface WidgetSize {
@@ -22,14 +23,6 @@ export interface WidgetDefinition {
   Component: LazyExoticComponent<ComponentType<WidgetProps>>
 }
 
-/** Action exposée à l'assistant IA (function calling, phase 10). */
-export interface AiActionDefinition {
-  name: string
-  description: string
-  /** Demande une confirmation avant exécution (création / suppression). */
-  requiresConfirmation: boolean
-}
-
 export interface MiniApp {
   /** Identifiant stable, utilisé dans l'URL (#/app/<id>) et dans les dispositions enregistrées. */
   id: string
@@ -40,5 +33,6 @@ export interface MiniApp {
   color: string
   Page: LazyExoticComponent<ComponentType>
   widgets: WidgetDefinition[]
-  aiActions: AiActionDefinition[]
+  /** Actions que l'assistant IA peut faire dans cette mini-appli. */
+  aiActions: AiTool[]
 }

@@ -3,6 +3,7 @@ import { FunctionError } from './backend'
 /** Réponses factices des Edge Functions pour le mode démo (aucun appel réseau). */
 export function demoFunction(name: string, body: Record<string, unknown>): unknown {
   if (name === 'dispatch-reminders') return { sent: 0 }
+  if (name === 'assistant') return demoAssistant(body)
   if (name !== 'lastfm') throw new FunctionError('unknown', `Fonction inconnue : ${name}`)
 
   const cover = (seed: number) =>
@@ -46,4 +47,30 @@ export function demoFunction(name: string, body: Record<string, unknown>): unkno
     albums: artists.map((artist, index) => ({ name: `Album ${index + 1}`, artist, plays: 70 - index * 5, url: '#', image: cover(index + 5) })),
     computedAt: new Date().toISOString(),
   }
+}
+
+/** Assistant factice : scénarios fixes pour tester l'interface (confirmation, outils, sources). */
+function demoAssistant(body: Record<string, unknown>) {
+  const conversationId = String(body.conversationId ?? 'demo-conversation')
+  const results = body.toolResults as { name: string; response: Record<string, unknown> }[] | undefined
+  if (results?.length) {
+    const cancelled = results.some((result) => result.response.annule)
+    return { status: 'done', conversationId, text: cancelled ? 'D’accord, je n’ai rien fait.' : 'C’est fait ! (mode démo)' }
+  }
+  const message = String(body.message ?? '').toLowerCase()
+  if (message.includes('alarme')) {
+    return { status: 'tool_calls', conversationId, calls: [{ id: 'c1', name: 'creer_alarme', args: { heure: '07:30', nom: 'Réveil démo' } }] }
+  }
+  if (message.includes('sombre')) {
+    return { status: 'tool_calls', conversationId, calls: [{ id: 'c2', name: 'changer_theme', args: { theme: 'sombre' } }] }
+  }
+  if (message.includes('météo') || message.includes('temps')) {
+    return {
+      status: 'done',
+      conversationId,
+      text: 'À Paris : **14 °C**, peu nuageux.\n- Demain : averses, 9 à 15 °C',
+      sources: [{ title: 'Open-Meteo', url: 'https://open-meteo.com/' }],
+    }
+  }
+  return { status: 'done', conversationId, text: 'Bonjour ! Je suis l’assistant (mode démo).' }
 }

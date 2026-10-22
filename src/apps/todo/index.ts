@@ -1,6 +1,7 @@
 import { lazy } from 'react'
 import { ListChecks } from 'lucide-react'
 import type { MiniApp } from '../types'
+import { todoTools } from './ai'
 
 export const todoApp: MiniApp = {
   id: 'todo',
@@ -21,5 +22,5 @@ export const todoApp: MiniApp = {
       Component: lazy(() => import('./TodayWidget')),
     },
   ],
-  aiActions: [],
+  aiActions: todoTools,
 }

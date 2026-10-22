@@ -13,5 +13,5 @@
     "baseUrl": "../..",
     "paths": { "npm:@supabase/supabase-js@2": ["node_modules/@supabase/supabase-js"] }
   },
-  "files": ["deno-shims.d.ts", "dispatch-reminders/index.ts", "notification-action/index.ts", "lastfm/index.ts"]
+  "files": ["deno-shims.d.ts", "dispatch-reminders/index.ts", "notification-action/index.ts", "lastfm/index.ts", "assistant/index.ts"]
 }

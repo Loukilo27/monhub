@@ -198,7 +198,6 @@ export default function CalendarPage() {
         allDayText="Journée"
         nowIndicator
         height="auto"
-        slotMinTime="06:00:00"
         scrollTime="07:30:00"
         slotLabelFormat={{ hour: '2-digit', minute: '2-digit', hour12: false }}
         eventTimeFormat={{ hour: '2-digit', minute: '2-digit', hour12: false }}

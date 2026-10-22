@@ -104,8 +104,10 @@ export const localBackend: Backend = {
     pendingReminders.delete(refId)
   },
   async dispatchNow() {},
-  async listRows<T extends { id: string }>(table: AppTable) {
-    return read<T[]>(`rows.${table}`) ?? []
+  async listRows<T extends { id: string }>(table: AppTable, options?: { filter?: Record<string, string> }) {
+    const rows = read<T[]>(`rows.${table}`) ?? []
+    const filter = Object.entries(options?.filter ?? {})
+    return rows.filter((row) => filter.every(([key, value]) => (row as Record<string, unknown>)[key] === value))
   },
   async upsertRows<T extends { id: string }>(table: AppTable, rows: T[]) {
     const byId = new Map((read<T[]>(`rows.${table}`) ?? []).map((row) => [row.id, row]))

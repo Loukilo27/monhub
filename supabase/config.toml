@@ -424,3 +424,6 @@ verify_jwt = false
 
 [functions.lastfm]
 verify_jwt = false
+
+[functions.assistant]
+verify_jwt = false

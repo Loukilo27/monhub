@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router'
 
-/** Raccourcis globaux PC : Échap = retour à l'accueil. (Ctrl+K arrivera avec l'assistant IA.) */
+/** Raccourcis globaux PC : Échap = retour à l'accueil (Ctrl+K, l'assistant, est géré par AssistantProvider). */
 export function useKeyboardShortcuts() {
   const navigate = useNavigate()
   const { pathname } = useLocation()

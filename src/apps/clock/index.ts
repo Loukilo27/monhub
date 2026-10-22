@@ -1,6 +1,7 @@
 import { lazy } from 'react'
 import { AlarmClock } from 'lucide-react'
 import type { MiniApp } from '../types'
+import { clockTools } from './ai'
 
 export const clockApp: MiniApp = {
   id: 'clock',
@@ -39,5 +40,5 @@ export const clockApp: MiniApp = {
       Component: lazy(() => import('./NextAlarmWidget')),
     },
   ],
-  aiActions: [],
+  aiActions: clockTools,
 }

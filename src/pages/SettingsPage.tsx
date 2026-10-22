@@ -1,6 +1,8 @@
 import { LogOut, ShieldCheck } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { useAuth } from '../auth/useAuth'
+import { AssistantFloatingButton } from '../assistant/AssistantButton'
+import { AssistantSettings } from '../assistant/AssistantSettings'
 import { PageHeader } from '../components/PageHeader'
 import { NotificationSettings } from '../notifications/NotificationSettings'
 import { THEME_OPTIONS } from '../theme/theme'
@@ -62,6 +64,9 @@ export default function SettingsPage() {
         <Section title="Notifications">
           <NotificationSettings />
         </Section>
+        <Section title="Assistant">
+          <AssistantSettings />
+        </Section>
         <Section title="Fond d’écran">
           <WallpaperSettings />
         </Section>
@@ -72,6 +77,7 @@ export default function SettingsPage() {
           </p>
         </Section>
       </main>
+      <AssistantFloatingButton />
     </div>
   )
 }

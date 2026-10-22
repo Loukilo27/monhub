@@ -1,6 +1,7 @@
 import { lazy } from 'react'
 import { NotebookPen } from 'lucide-react'
 import type { MiniApp } from '../types'
+import { notesTools } from './ai'
 
 export const notesApp: MiniApp = {
   id: 'notes',
@@ -21,5 +22,5 @@ export const notesApp: MiniApp = {
       Component: lazy(() => import('./NotePreviewWidget')),
     },
   ],
-  aiActions: [],
+  aiActions: notesTools,
 }

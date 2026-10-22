@@ -1,6 +1,7 @@
 import { lazy } from 'react'
 import { CalendarDays } from 'lucide-react'
 import type { MiniApp } from '../types'
+import { calendarTools } from './ai'
 
 export const calendarApp: MiniApp = {
   id: 'calendar',
@@ -20,5 +21,5 @@ export const calendarApp: MiniApp = {
       Component: lazy(() => import('./UpcomingWidget')),
     },
   ],
-  aiActions: [],
+  aiActions: calendarTools,
 }

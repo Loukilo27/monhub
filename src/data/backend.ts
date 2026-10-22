@@ -25,6 +25,8 @@ export interface Preferences {
   wallpaper?: Wallpaper
   notifications?: NotificationPreferences
   music?: { lastfmUser?: string }
+  /** Assistant : réponses lues à voix haute, voix choisie. */
+  ai?: { speak?: boolean; voiceURI?: string }
 }
 
 /** Erreur renvoyée par une Edge Function : code court + message lisible. */
@@ -81,7 +83,7 @@ export interface Settings {
 }
 
 /** Tables des mini-applis, accessibles par l'API générique (listRows / upsertRows / deleteRows). */
-export type AppTable = 'world_clocks' | 'alarms' | 'timers' | 'todo_lists' | 'tags' | 'tasks' | 'events' | 'notes' | 'drawings' | 'music_playlists'
+export type AppTable = 'world_clocks' | 'alarms' | 'timers' | 'todo_lists' | 'tags' | 'tasks' | 'events' | 'notes' | 'drawings' | 'music_playlists' | 'ai_conversations' | 'ai_messages'
 
 /** Buckets de fichiers privés (chaque utilisateur n'accède qu'à son dossier). */
 export type FileBucket = 'drawings'
@@ -118,7 +120,8 @@ export interface Backend {
   /** Demande l'envoi immédiat des rappels échus (sans attendre la minute suivante). */
   dispatchNow(): Promise<void>
 
-  listRows<T extends { id: string }>(table: AppTable): Promise<T[]>
+  /** Lignes d'une table, éventuellement filtrées (égalité) et limitées à certaines colonnes. */
+  listRows<T extends { id: string }>(table: AppTable, options?: { columns?: string; filter?: Record<string, string> }): Promise<T[]>
   /** Crée ou met à jour des lignes (clé : id). */
   upsertRows<T extends { id: string }>(table: AppTable, rows: T[]): Promise<void>
   deleteRows(table: AppTable, ids: string[]): Promise<void>

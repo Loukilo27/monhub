@@ -58,7 +58,7 @@ L'outil en ligne de commande Supabase est installé avec le projet (`npx supabas
 | `npx supabase secrets set NOM=valeur` | définit un secret des Edge Functions |
 | `npx supabase config push` | applique les réglages d'authentification de `supabase/config.toml` |
 
-Secrets des Edge Functions (jamais dans le dépôt) : `OWNER_USER_ID`, `CRON_SECRET`, `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`, `ALLOWED_ORIGINS`, `LASTFM_API_KEY`.
+Secrets des Edge Functions (jamais dans le dépôt) : `OWNER_USER_ID`, `CRON_SECRET`, `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`, `ALLOWED_ORIGINS`, `LASTFM_API_KEY`, `GEMINI_API_KEY` (et, facultatifs : `GEMINI_MODELS`, liste de modèles par ordre de préférence ; `GEMINI_THINKING_LEVEL`).
 Secrets du Vault (lus par `pg_cron`) : `project_url`, `cron_secret` (même valeur que `CRON_SECRET`).
 
 ### Notifications
@@ -82,6 +82,7 @@ Les mini-applis programment des **rappels** (table `reminders`). Chaque minute, 
    - `<Nom>Page.tsx` : la page plein écran (export par défaut) ;
    - `index.ts` : la définition (`MiniApp`) — nom, icône Lucide, couleur, page chargée à la demande, widgets, actions IA.
 2. L'ajouter au tableau `APPS` de `src/apps/registry.ts`.
+3. Facultatif : déclarer ses actions pour l'assistant IA dans `aiActions` (voir `src/apps/*/ai.ts` et le contrat `AiTool` de `src/assistant/types.ts`) : nom, description, paramètres (JSON Schema), confirmation requise ou non, récapitulatif et exécution.
 
 Elle apparaît alors dans le tiroir d'applications et devient accessible à l'adresse `#/app/<id>`.
 

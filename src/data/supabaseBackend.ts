@@ -174,10 +174,12 @@ export const supabaseBackend: Backend = {
     check(await requireSupabase().from('reminders').delete().eq('ref_id', refId).is('sent_at', null))
   },
 
-  async listRows<T extends { id: string }>(table: AppTable) {
-    const { data } = check(await requireSupabase().from(table).select('*').order('created_at'))
+  async listRows<T extends { id: string }>(table: AppTable, options?: { columns?: string; filter?: Record<string, string> }) {
+    let query = requireSupabase().from(table).select(options?.columns ?? '*')
+    if (options?.filter) query = query.match(options.filter)
+    const { data } = check(await query.order('created_at'))
     // created_at / updated_at sont conservés (tri, affichage) ; la base les tient à jour.
-    return (data ?? []).map(({ user_id: _userId, ...row }) => row) as T[]
+    return ((data ?? []) as unknown as Record<string, unknown>[]).map(({ user_id: _userId, ...row }) => row) as T[]
   },
 
   async upsertRows(table, rows) {
