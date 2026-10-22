@@ -9,6 +9,17 @@ export const notesApp: MiniApp = {
   icon: NotebookPen,
   color: '#eab308',
   Page: lazy(() => import('./NotesPage')),
-  widgets: [],
+  widgets: [
+    {
+      id: 'preview',
+      name: 'Aperçu d’une note',
+      sizes: [
+        { w: 2, h: 2 },
+        { w: 4, h: 2 },
+        { w: 4, h: 3 },
+      ],
+      Component: lazy(() => import('./NotePreviewWidget')),
+    },
+  ],
   aiActions: [],
 }

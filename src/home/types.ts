@@ -12,6 +12,8 @@ export interface GridItem {
   y: number
   w: number
   h: number
+  /** Réglages propres à un widget (ex. la note affichée). */
+  config?: Record<string, unknown>
 }
 
 export interface GridSpec {

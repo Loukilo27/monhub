@@ -27,8 +27,8 @@ function RootLayout() {
   useKeyboardShortcuts()
   useSettingsSync()
   useRealtimeSync()
-  // Tâches et agenda : synchronisés en temps réel entre appareils (l'Horloge gère ses tables dans ClockRinger).
-  useRowsRealtime(['todo_lists', 'tags', 'tasks', 'events'])
+  // Tâches, agenda et notes : synchronisés en temps réel entre appareils (l'Horloge gère ses tables dans ClockRinger).
+  useRowsRealtime(['todo_lists', 'tags', 'tasks', 'events', 'notes'])
   useNotificationLinks()
   return (
     <>
@@ -70,7 +70,13 @@ export default function App() {
     <ThemeProvider>
       <ToastProvider>
         {isSupabaseConfigured || isDemoMode ? (
-          <PersistQueryClientProvider client={queryClient} persistOptions={persistOptions}>
+          <PersistQueryClientProvider
+            client={queryClient}
+            persistOptions={persistOptions}
+            // Le cache restauré sert à afficher l'app instantanément, mais il peut avoir un léger retard
+            // (écriture différée) : on recharge aussitôt les vraies données en arrière-plan.
+            onSuccess={() => void queryClient.invalidateQueries()}
+          >
             <Authenticated>
               <Router />
             </Authenticated>

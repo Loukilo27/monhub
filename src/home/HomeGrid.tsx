@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties }
 import { getWidget } from '../apps/registry'
 import { useElementSize } from '../lib/useElementSize'
 import { EditBadges, GridItemContent, GridItemLink } from './GridItemView'
+import { WidgetConfigContext } from './widgetConfig'
 import { findNearestFree, moveItem, reflow, removeItem } from './layoutEngine'
 import { ResizeMenu } from './ResizeMenu'
 import { GRID_SPECS, type GridItem, type Layout, type LayoutKind } from './types'
@@ -293,7 +294,11 @@ export function HomeGrid({ kind, layout, editing, onEditingChange, onChange, onP
 
   const draggedItem = drag?.active ? layout.items.find((item) => item.id === drag.id) : undefined
 
+  const saveWidgetConfig = (itemId: string, config: Record<string, unknown>) =>
+    onChange({ ...layout, items: layout.items.map((item) => (item.id === itemId ? { ...item, config } : item)) })
+
   return (
+    <WidgetConfigContext.Provider value={saveWidgetConfig}>
     <div
       ref={containerRef}
       className={`relative min-h-0 flex-1 select-none [-webkit-touch-callout:none] ${reflowed ? 'overflow-y-auto' : ''}`}
@@ -372,5 +377,6 @@ export function HomeGrid({ kind, layout, editing, onEditingChange, onChange, onP
         />
       )}
     </div>
+    </WidgetConfigContext.Provider>
   )
 }

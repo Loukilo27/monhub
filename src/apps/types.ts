@@ -7,12 +7,19 @@ export interface WidgetSize {
   h: number
 }
 
+export interface WidgetProps {
+  size: WidgetSize
+  /** Réglages enregistrés avec ce widget sur l'accueil (ex. la note choisie). */
+  config?: Record<string, unknown>
+  onConfigChange?: (config: Record<string, unknown>) => void
+}
+
 export interface WidgetDefinition {
   /** Identifiant unique au sein de la mini-appli (ex. « horloge »). */
   id: string
   name: string
   sizes: WidgetSize[]
-  Component: LazyExoticComponent<ComponentType<{ size: WidgetSize }>>
+  Component: LazyExoticComponent<ComponentType<WidgetProps>>
 }
 
 /** Action exposée à l'assistant IA (function calling, phase 10). */

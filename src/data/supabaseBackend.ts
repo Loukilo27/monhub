@@ -176,7 +176,8 @@ export const supabaseBackend: Backend = {
 
   async listRows<T extends { id: string }>(table: AppTable) {
     const { data } = check(await requireSupabase().from(table).select('*').order('created_at'))
-    return (data ?? []).map(({ user_id: _userId, created_at: _createdAt, updated_at: _updatedAt, ...row }) => row) as T[]
+    // created_at / updated_at sont conservés (tri, affichage) ; la base les tient à jour.
+    return (data ?? []).map(({ user_id: _userId, ...row }) => row) as T[]
   },
 
   async upsertRows(table, rows) {

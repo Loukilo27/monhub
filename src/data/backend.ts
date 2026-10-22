@@ -69,7 +69,7 @@ export interface Settings {
 }
 
 /** Tables des mini-applis, accessibles par l'API générique (listRows / upsertRows / deleteRows). */
-export type AppTable = 'world_clocks' | 'alarms' | 'timers' | 'todo_lists' | 'tags' | 'tasks' | 'events'
+export type AppTable = 'world_clocks' | 'alarms' | 'timers' | 'todo_lists' | 'tags' | 'tasks' | 'events' | 'notes'
 
 export type RealtimeTable = 'settings' | 'layouts' | 'notifications' | AppTable
 export type RealtimeEvent = 'INSERT' | 'UPDATE' | 'DELETE'

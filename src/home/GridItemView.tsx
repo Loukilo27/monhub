@@ -1,9 +1,10 @@
 import { Maximize2, X } from 'lucide-react'
-import { Component, Suspense, type ReactNode } from 'react'
+import { Component, Suspense, useContext, type ReactNode } from 'react'
 import { Link, useNavigate, useViewTransitionState } from 'react-router'
 import { getApp, getWidget } from '../apps/registry'
 import type { MiniApp } from '../apps/types'
 import type { GridItem } from './types'
+import { WidgetConfigContext } from './widgetConfig'
 
 /** Icône d'appli de l'accueil (raccourci). */
 export function ShortcutTile({ app, compact }: { app: MiniApp; compact: boolean }) {
@@ -36,6 +37,7 @@ class WidgetErrorBoundary extends Component<{ children: ReactNode }, { failed: b
 
 /** Contenu d'un élément de la grille (raccourci ou widget), sans interaction. */
 export function GridItemContent({ item, compact }: { item: GridItem; compact: boolean }) {
+  const saveConfig = useContext(WidgetConfigContext)
   const app = getApp(item.appId)
   if (!app) return null
   if (item.type === 'shortcut') return <ShortcutTile app={app} compact={compact} />
@@ -50,7 +52,11 @@ export function GridItemContent({ item, compact }: { item: GridItem; compact: bo
       <WidgetErrorBoundary>
         <Suspense fallback={null}>
           {widget ? (
-            <widget.Component size={{ w: item.w, h: item.h }} />
+            <widget.Component
+              size={{ w: item.w, h: item.h }}
+              config={item.config}
+              onConfigChange={saveConfig ? (config) => saveConfig(item.id, config) : undefined}
+            />
           ) : (
             <div className="grid h-full place-items-center text-xs text-muted">Widget introuvable</div>
           )}
