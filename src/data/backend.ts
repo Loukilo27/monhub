@@ -69,7 +69,10 @@ export interface Settings {
 }
 
 /** Tables des mini-applis, accessibles par l'API générique (listRows / upsertRows / deleteRows). */
-export type AppTable = 'world_clocks' | 'alarms' | 'timers' | 'todo_lists' | 'tags' | 'tasks' | 'events' | 'notes'
+export type AppTable = 'world_clocks' | 'alarms' | 'timers' | 'todo_lists' | 'tags' | 'tasks' | 'events' | 'notes' | 'drawings'
+
+/** Buckets de fichiers privés (chaque utilisateur n'accède qu'à son dossier). */
+export type FileBucket = 'drawings'
 
 export type RealtimeTable = 'settings' | 'layouts' | 'notifications' | AppTable
 export type RealtimeEvent = 'INSERT' | 'UPDATE' | 'DELETE'
@@ -107,6 +110,13 @@ export interface Backend {
   /** Crée ou met à jour des lignes (clé : id). */
   upsertRows<T extends { id: string }>(table: AppTable, rows: T[]): Promise<void>
   deleteRows(table: AppTable, ids: string[]): Promise<void>
+
+  /** Fichiers du dossier de l'utilisateur dans un bucket privé (le nom est relatif à ce dossier). */
+  uploadFile(bucket: FileBucket, name: string, data: Blob): Promise<void>
+  downloadFile(bucket: FileBucket, name: string): Promise<Blob>
+  /** Liens temporaires (1 h) pour afficher des fichiers. */
+  fileUrls(bucket: FileBucket, names: string[]): Promise<Record<string, string>>
+  removeFiles(bucket: FileBucket, names: string[]): Promise<void>
 
   /** Écoute les modifications faites ailleurs (autre appareil). Renvoie la fonction de désabonnement. */
   subscribe(table: RealtimeTable, onChange: (row: Record<string, unknown>, event: RealtimeEvent) => void): () => void

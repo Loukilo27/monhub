@@ -1,7 +1,7 @@
 import type { Layout, LayoutKind } from '../home/types'
 import { requireSupabase } from '../lib/supabase'
 import { isThemePreference } from '../theme/theme'
-import type { AppNotification, AppTable, Backend, Preferences, Settings } from './backend'
+import type { AppNotification, AppTable, Backend, FileBucket, Preferences, Settings } from './backend'
 
 async function userId(): Promise<string> {
   const { data } = await requireSupabase().auth.getSession()
@@ -191,6 +191,29 @@ export const supabaseBackend: Backend = {
   async dispatchNow() {
     const { error } = await requireSupabase().functions.invoke('dispatch-reminders', { body: {} })
     if (error) throw new Error(error.message)
+  },
+
+  async uploadFile(bucket: FileBucket, name: string, data: Blob) {
+    check(await requireSupabase().storage.from(bucket).upload(`${await userId()}/${name}`, data, { contentType: data.type, upsert: true }))
+  },
+
+  async downloadFile(bucket: FileBucket, name: string) {
+    const { data } = check(await requireSupabase().storage.from(bucket).download(`${await userId()}/${name}`))
+    if (!data) throw new Error('Fichier introuvable.')
+    return data
+  },
+
+  async fileUrls(bucket: FileBucket, names: string[]) {
+    if (!names.length) return {}
+    const folder = await userId()
+    const { data } = check(await requireSupabase().storage.from(bucket).createSignedUrls(names.map((name) => `${folder}/${name}`), 3600))
+    return Object.fromEntries((data ?? []).filter((item) => item.signedUrl && item.path).map((item) => [item.path!.slice(folder.length + 1), item.signedUrl as string]))
+  },
+
+  async removeFiles(bucket: FileBucket, names: string[]) {
+    if (!names.length) return
+    const folder = await userId()
+    await requireSupabase().storage.from(bucket).remove(names.map((name) => `${folder}/${name}`))
   },
 
   subscribe(table, onChange) {

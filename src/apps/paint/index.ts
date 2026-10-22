@@ -9,6 +9,17 @@ export const paintApp: MiniApp = {
   icon: Palette,
   color: '#8b5cf6',
   Page: lazy(() => import('./PaintPage')),
-  widgets: [],
+  widgets: [
+    {
+      id: 'last-drawing',
+      name: 'Dernier dessin',
+      sizes: [
+        { w: 2, h: 2 },
+        { w: 4, h: 2 },
+        { w: 4, h: 3 },
+      ],
+      Component: lazy(() => import('./LastDrawingWidget')),
+    },
+  ],
   aiActions: [],
 }

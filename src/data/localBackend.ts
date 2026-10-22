@@ -115,6 +115,20 @@ export const localBackend: Backend = {
   async deleteRows(table, ids) {
     write(`rows.${table}`, (read<{ id: string }[]>(`rows.${table}`) ?? []).filter((row) => !ids.includes(row.id)))
   },
+  async uploadFile(bucket, name, data) {
+    write(`file.${bucket}/${name}`, await blobToDataUrl(data))
+  },
+  async downloadFile(bucket, name) {
+    const url = read<string>(`file.${bucket}/${name}`)
+    if (!url) throw new Error('Fichier introuvable.')
+    return (await fetch(url)).blob()
+  },
+  async fileUrls(bucket, names) {
+    return Object.fromEntries(names.map((name) => [name, read<string>(`file.${bucket}/${name}`)]).filter(([, url]) => url)) as Record<string, string>
+  },
+  async removeFiles(bucket, names) {
+    for (const name of names) localStorage.removeItem(`${PREFIX}file.${bucket}/${name}`)
+  },
   subscribe(table, onChange) {
     if (table !== 'notifications') return () => {}
     listeners.add(onChange)
