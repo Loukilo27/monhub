@@ -32,3 +32,6 @@ dist-ssr
 # Playwright
 test-results/
 playwright-report/
+
+# Notes personnelles avec identifiants (jamais commitées)
+info.txt
