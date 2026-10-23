@@ -52,6 +52,17 @@ const PATTERNS: Record<string, { cycle: number; notes: Note[] }> = {
 
 let context: AudioContext | null = null
 
+/** Réglages « Sons » : volume général et sonnerie des minuteurs. */
+let soundPreferences: { volume: number; timerSound: string } = { volume: 1, timerSound: 'carillon' }
+
+export function setSoundPreferences(preferences: { volume?: number; timerSound?: string }) {
+  soundPreferences = { volume: Math.min(1, Math.max(0, preferences.volume ?? 1)), timerSound: preferences.timerSound ?? 'carillon' }
+}
+
+export function timerSoundId(): string {
+  return soundPreferences.timerSound
+}
+
 function audioContext(): AudioContext | null {
   if (context) return context
   const AudioContextClass = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
@@ -99,6 +110,7 @@ export function playSound(soundId: string, { loop = true, maxSeconds = 300 } = {
   void ctx.resume()
   // Sortie propre à cette lecture : la couper arrête aussi les notes déjà programmées.
   const output = ctx.createGain()
+  output.gain.value = soundPreferences.volume
   output.connect(ctx.destination)
   let stopped = false
   let next = ctx.currentTime + 0.05

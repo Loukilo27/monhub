@@ -17,10 +17,11 @@ vi.mock('./lib/supabase', () => ({
 }))
 
 // Données en mémoire du navigateur à la place de Supabase.
-vi.mock('./data', async () => ({
-  isDemoMode: false,
-  backend: (await import('./data/localBackend')).localBackend,
-}))
+vi.mock('./data', async () => {
+  const { localBackend } = await import('./data/localBackend')
+  const { Outbox } = await import('./data/outbox')
+  return { isDemoMode: false, backend: localBackend, outbox: new Outbox(localBackend) }
+})
 
 function setScreen(width: number, height: number) {
   Object.defineProperty(window.screen, 'width', { value: width, configurable: true })

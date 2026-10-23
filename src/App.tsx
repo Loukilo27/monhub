@@ -7,10 +7,12 @@ import { AuthGate } from './auth/AuthGate'
 import { AuthProvider } from './auth/AuthProvider'
 import { DemoAuthProvider } from './auth/DemoAuthProvider'
 import { ReloadPrompt } from './components/ReloadPrompt'
+import { SyncStatus } from './components/SyncStatus'
 import { ToastProvider } from './components/toast'
 import { isDemoMode } from './data'
 import { useRealtimeSync } from './data/queries'
 import { useRowsRealtime } from './data/rows'
+import { useOutboxSync } from './data/useSync'
 import { persistOptions, queryClient } from './data/queryClient'
 import { useKeyboardShortcuts } from './lib/useKeyboardShortcuts'
 import { isSupabaseConfigured } from './lib/supabase'
@@ -28,6 +30,7 @@ function RootLayout() {
   useKeyboardShortcuts()
   useSettingsSync()
   useRealtimeSync()
+  useOutboxSync()
   // Tâches, agenda et notes : synchronisés en temps réel entre appareils (l'Horloge gère ses tables dans ClockRinger).
   useRowsRealtime(['todo_lists', 'tags', 'tasks', 'events', 'notes', 'drawings', 'music_playlists'])
   useNotificationLinks()
@@ -35,6 +38,7 @@ function RootLayout() {
     <AssistantProvider>
       <Outlet />
       <ClockRinger />
+      <SyncStatus />
     </AssistantProvider>
   )
 }

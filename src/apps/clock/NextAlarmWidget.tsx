@@ -1,4 +1,5 @@
 import { AlarmClock } from 'lucide-react'
+import { formatClockTime } from '../../lib/time'
 import { useNowMinute } from '../../lib/useNow'
 import { DAY_NAMES, findNextAlarm, formatCountdown, useAlarms, useTimeZone } from './alarms'
 import { zonedParts } from '../../../supabase/functions/_shared/zonedTime'
@@ -23,7 +24,7 @@ export default function NextAlarmWidget() {
     <div className="flex h-full items-center gap-[4cqw] px-[7cqw]">
       <AlarmClock aria-hidden className="size-[30cqh] shrink-0 text-accent" />
       <div className="min-w-0">
-        <p className="text-[min(34cqh,15cqw)] leading-none font-semibold tabular-nums">{next.alarm.time}</p>
+        <p className="text-[min(34cqh,15cqw)] leading-none font-semibold tabular-nums">{formatClockTime(next.alarm.time)}</p>
         <p className="truncate text-[min(13cqh,6.5cqw)] text-muted">
           {next.alarm.label || day} · {formatCountdown(next.at.getTime() - now.getTime())}
         </p>

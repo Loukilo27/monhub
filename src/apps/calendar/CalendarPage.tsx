@@ -10,6 +10,7 @@ import { useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router'
 import { expandEvent, localDate } from '../../../supabase/functions/_shared/events'
 import { zonedParts, zonedToUtc } from '../../../supabase/functions/_shared/zonedTime'
+import { hourCycle } from '../../lib/time'
 import { useToast } from '../../components/toast'
 import { useTimeZone } from '../../data/queries'
 import { useLayoutKind } from '../../home/useLayoutKind'
@@ -199,8 +200,8 @@ export default function CalendarPage() {
         nowIndicator
         height="auto"
         scrollTime="07:30:00"
-        slotLabelFormat={{ hour: '2-digit', minute: '2-digit', hour12: false }}
-        eventTimeFormat={{ hour: '2-digit', minute: '2-digit', hour12: false }}
+        slotLabelFormat={{ hour: '2-digit', minute: '2-digit', hour12: hourCycle() === 'h12' }}
+        eventTimeFormat={{ hour: '2-digit', minute: '2-digit', hour12: hourCycle() === 'h12' }}
         dayMaxEvents
         selectable
         selectMirror

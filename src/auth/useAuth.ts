@@ -7,7 +7,8 @@ export interface AuthContextValue {
   session: Session | null
   /** Relit le niveau d'assurance (après validation d'un code 2FA). */
   refresh: () => Promise<void>
-  signOut: () => Promise<void>
+  /** Déconnexion de cet appareil, ou de tous (`everywhere`). */
+  signOut: (everywhere?: boolean) => Promise<void>
 }
 
 export const AuthContext = createContext<AuthContextValue | null>(null)

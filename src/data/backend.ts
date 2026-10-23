@@ -1,4 +1,5 @@
 import type { Layout, LayoutKind } from '../home/types'
+import type { HourCycle } from '../lib/time'
 import type { ThemePreference } from '../theme/theme'
 
 export type Wallpaper =
@@ -27,6 +28,16 @@ export interface Preferences {
   music?: { lastfmUser?: string }
   /** Assistant : réponses lues à voix haute, voix choisie. */
   ai?: { speak?: boolean; voiceURI?: string }
+  /** Format d'heure (24 h par défaut). */
+  timeFormat?: HourCycle
+  sounds?: SoundPreferences
+}
+
+export interface SoundPreferences {
+  /** Volume des sonneries, de 0 à 1 (1 par défaut). */
+  volume?: number
+  /** Sonnerie de fin des minuteurs. */
+  timerSound?: string
 }
 
 /** Erreur renvoyée par une Edge Function : code court + message lisible. */
@@ -98,9 +109,13 @@ export type RealtimeEvent = 'INSERT' | 'UPDATE' | 'DELETE'
  */
 export interface Backend {
   loadSettings(): Promise<Settings | null>
-  saveSettings(patch: Partial<Settings>): Promise<void>
+  /**
+   * Les écritures acceptent l'heure de la modification (`editedAt`, ISO) : une modification
+   * envoyée en différé (hors-ligne) ne remplace pas une version enregistrée plus récente.
+   */
+  saveSettings(patch: Partial<Settings>, editedAt?: string): Promise<void>
   loadLayout(kind: LayoutKind): Promise<Layout | null>
-  saveLayout(kind: LayoutKind, layout: Layout): Promise<void>
+  saveLayout(kind: LayoutKind, layout: Layout, editedAt?: string): Promise<void>
   uploadWallpaper(image: Blob): Promise<string>
   deleteWallpaper(path: string): Promise<void>
   wallpaperUrl(path: string): Promise<string>
@@ -123,7 +138,7 @@ export interface Backend {
   /** Lignes d'une table, éventuellement filtrées (égalité) et limitées à certaines colonnes. */
   listRows<T extends { id: string }>(table: AppTable, options?: { columns?: string; filter?: Record<string, string> }): Promise<T[]>
   /** Crée ou met à jour des lignes (clé : id). */
-  upsertRows<T extends { id: string }>(table: AppTable, rows: T[]): Promise<void>
+  upsertRows<T extends { id: string }>(table: AppTable, rows: T[], editedAt?: string): Promise<void>
   deleteRows(table: AppTable, ids: string[]): Promise<void>
 
   /** Fichiers du dossier de l'utilisateur dans un bucket privé (le nom est relatif à ce dossier). */

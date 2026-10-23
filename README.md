@@ -65,6 +65,17 @@ Secrets du Vault (lus par `pg_cron`) : `project_url`, `cron_secret` (même valeu
 
 Les mini-applis programment des **rappels** (table `reminders`). Chaque minute, `pg_cron` vérifie s'il y en a d'échus et, seulement dans ce cas, appelle l'Edge Function `dispatch-reminders`. Elle les inscrit dans l'historique (`notifications`, la cloche) et envoie les push aux appareils abonnés, en respectant les réglages (applis coupées, « Ne pas déranger »). Les boutons des notifications appellent `notification-action`.
 
+### Hors-ligne et synchronisation
+
+- L'interface est mise en cache par le service worker et s'ouvre sans réseau ; les dernières données affichées sont gardées dans le navigateur (cache TanStack Query).
+- Sans réseau, les écritures (lignes, réglages, disposition, rappels) passent par une **file d'attente** (`src/data/outbox.ts`) conservée dans le navigateur, puis sont envoyées dans l'ordre au retour de la connexion. Une pastille en bas à droite indique « Hors-ligne » et le nombre de modifications en attente.
+- **La dernière modification gagne** : chaque écriture porte l'heure à laquelle elle a été faite (`updated_at`). Le trigger `private.set_updated_at` ignore une modification plus ancienne que la version enregistrée (migration `hors_ligne`).
+- Les dessins, le fond d'écran, l'assistant et la musique demandent une connexion.
+
+### Sauvegarde
+
+Réglages → Sauvegarde : un fichier ZIP avec `monhub.json` (réglages, dispositions, toutes les lignes des mini-applis) et le dossier `dessins/` (documents, PNG et miniatures), plus le fond d'écran importé. La restauration ajoute ou remplace les éléments de la sauvegarde (même identifiant), sans rien supprimer, puis reprogramme les rappels. Logique dans `src/settings/backup.ts`.
+
 ### Logique partagée app / serveur
 
 `supabase/functions/_shared/` contient du code pur (sans dépendance Deno), utilisé à la fois par l'app et par les Edge Functions, et testé par Vitest :
@@ -95,5 +106,7 @@ src/
   lib/           utilitaires (dates, raccourcis clavier…)
   pages/         accueil, page de mini-appli, réglages
   theme/         thèmes clair / sombre / automatique
-  sw.ts          service worker (cache hors-ligne, push à la phase 4)
+  data/          accès aux données (Supabase / démo), file d'attente hors-ligne
+  settings/      réglages : fond d'écran, date et heure, sons, sauvegarde
+  sw.ts          service worker (cache hors-ligne, notifications push)
 ```

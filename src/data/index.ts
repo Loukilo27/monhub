@@ -1,5 +1,6 @@
 import type { Backend } from './backend'
 import { localBackend } from './localBackend'
+import { Outbox, withOutbox } from './outbox'
 import { supabaseBackend } from './supabaseBackend'
 
 /**
@@ -8,4 +9,9 @@ import { supabaseBackend } from './supabaseBackend'
  */
 export const isDemoMode = import.meta.env.VITE_DEMO_MODE === 'true'
 
-export const backend: Backend = isDemoMode ? localBackend : supabaseBackend
+const inner: Backend = isDemoMode ? localBackend : supabaseBackend
+
+/** Modifications faites hors-ligne, en attente d'envoi. */
+export const outbox = new Outbox(inner)
+
+export const backend: Backend = withOutbox(inner, outbox)

@@ -48,6 +48,24 @@ export function newTask(listId: string, overrides: Partial<Task> = {}): Task {
   }
 }
 
+/** Programme (ou annule) le rappel push d'une tâche. */
+export async function scheduleTaskReminder(task: Task, timeZone: string) {
+  await backend.cancelReminders(task.id)
+  const at = reminderTime(task, timeZone)
+  if (!at || at.getTime() <= Date.now() || task.parent_id || task.completed_at) return
+  await backend.createReminder({
+    source: 'todo',
+    kind: 'task',
+    refId: task.id,
+    title: task.title,
+    body: describeDue(task, localToday(new Date(), timeZone)),
+    url: `/app/todo?task=${task.id}`,
+    actions: ['done', 'snooze'],
+    sendAt: at,
+    offsetMinutes: task.reminder_offset_minutes ?? 0,
+  })
+}
+
 /** Actions de la to-do, avec programmation des rappels (push) à chaque changement d'échéance. */
 export function useTodoActions() {
   const queryClient = useQueryClient()
@@ -61,25 +79,7 @@ export function useTodoActions() {
 
   const currentTasks = useCallback(() => queryClient.getQueryData<Task[]>(rowsKey('tasks')) ?? [], [queryClient])
 
-  const scheduleReminder = useCallback(
-    async (task: Task) => {
-      await backend.cancelReminders(task.id)
-      const at = reminderTime(task, timeZone)
-      if (!at || at.getTime() <= Date.now() || task.parent_id) return
-      await backend.createReminder({
-        source: 'todo',
-        kind: 'task',
-        refId: task.id,
-        title: task.title,
-        body: describeDue(task, localToday(new Date(), timeZone)),
-        url: `/app/todo?task=${task.id}`,
-        actions: ['done', 'snooze'],
-        sendAt: at,
-        offsetMinutes: task.reminder_offset_minutes ?? 0,
-      })
-    },
-    [timeZone],
-  )
+  const scheduleReminder = useCallback((task: Task) => scheduleTaskReminder(task, timeZone), [timeZone])
 
   const saveTask = useCallback(
     async (task: Task) => {

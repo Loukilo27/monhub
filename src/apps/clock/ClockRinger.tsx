@@ -4,8 +4,9 @@ import { nextAlarmOccurrence } from '../../../supabase/functions/_shared/zonedTi
 import type { AppNotification } from '../../data/backend'
 import { backend } from '../../data'
 import { useRowsRealtime } from '../../data/rows'
+import { formatClockTime } from '../../lib/time'
 import { useAlarms, useTimeZone } from './alarms'
-import { playSound, unlockAudioOnFirstGesture } from './sounds'
+import { playSound, timerSoundId, unlockAudioOnFirstGesture } from './sounds'
 import { describeDuration, useTimerActions, useTimers } from './timers'
 import type { Alarm, Timer } from './types'
 
@@ -53,7 +54,7 @@ export function ClockRinger() {
       refId: alarm.id,
       alarm,
       title: alarm.label || 'Alarme',
-      subtitle: alarm.time,
+      subtitle: formatClockTime(alarm.time),
       sound: alarm.sound,
     }),
     [],
@@ -66,7 +67,7 @@ export function ClockRinger() {
       timer,
       title: 'Minuteur terminé',
       subtitle: timer.label || describeDuration(timer.duration_seconds),
-      sound: 'carillon',
+      sound: timerSoundId(),
     }),
     [],
   )

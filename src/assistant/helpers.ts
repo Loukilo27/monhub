@@ -1,6 +1,7 @@
 import { backend } from '../data'
 import type { AppTable } from '../data/backend'
 import { rowsKey } from '../data/rows'
+import { hourCycle } from '../lib/time'
 import type { AiContext } from './types'
 
 /** Lignes d'une table : depuis le cache si l'appli a déjà été ouverte, sinon chargées. */
@@ -22,7 +23,7 @@ export function describeInstant(iso: string, timeZone: string, withTime = true):
     weekday: 'long',
     day: 'numeric',
     month: 'long',
-    ...(withTime ? { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' as const } : {}),
+    ...(withTime ? { hour: '2-digit', minute: '2-digit', hourCycle: hourCycle() } : {}),
     timeZone,
   })
     .format(new Date(iso))

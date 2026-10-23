@@ -1,5 +1,6 @@
 import { addDays, nextOccurrence, parseRRule } from '../../../supabase/functions/_shared/recurrence'
 import { zonedParts, zonedToUtc } from '../../../supabase/functions/_shared/zonedTime'
+import { formatClockTime } from '../../lib/time'
 import type { Task, TaskSort, TodoView } from './types'
 
 /** Heure retenue pour le rappel d'une tâche datée sans heure. */
@@ -116,7 +117,7 @@ export function describeDue(task: Pick<Task, 'due_date' | 'due_time'>, today: st
         : task.due_date === addDays(today, -1)
           ? 'Hier'
           : SHORT_DATE.format(new Date(`${task.due_date}T12:00:00Z`))
-  return task.due_time ? `${day} ${task.due_time}` : day
+  return task.due_time ? `${day} ${formatClockTime(task.due_time)}` : day
 }
 
 /** Instant du rappel d'une tâche, ou null (pas de rappel, pas d'échéance). */

@@ -1,5 +1,6 @@
 import { AlarmClock } from 'lucide-react'
 import { useState } from 'react'
+import { formatClockTime, hourCycle } from '../../lib/time'
 import { useNowSecond } from '../../lib/useNow'
 import { AnalogClock } from './AnalogClock'
 import { findNextAlarm, formatCountdown, useAlarms, useTimeZone } from './alarms'
@@ -30,7 +31,7 @@ export function MainClockTab() {
     }
   }
 
-  const time = new Intl.DateTimeFormat('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23', timeZone }).format(now)
+  const time = new Intl.DateTimeFormat('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: hourCycle(), timeZone }).format(now)
   const date = new Intl.DateTimeFormat('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone }).format(now)
 
   return (
@@ -66,7 +67,7 @@ export function MainClockTab() {
       {next && (
         <p className="flex items-center gap-2 rounded-full bg-surface-2 px-4 py-2 text-sm text-muted">
           <AlarmClock aria-hidden className="size-4" />
-          Prochaine alarme à {next.alarm.time}
+          Prochaine alarme à {formatClockTime(next.alarm.time)}
           {next.alarm.label && ` (${next.alarm.label})`} — {formatCountdown(next.at.getTime() - now.getTime())}
         </p>
       )}

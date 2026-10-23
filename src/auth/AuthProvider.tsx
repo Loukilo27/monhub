@@ -31,8 +31,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => data.subscription.unsubscribe()
   }, [refresh])
 
-  const signOut = useCallback(async () => {
-    await requireSupabase().auth.signOut()
+  const signOut = useCallback(async (everywhere = false) => {
+    await requireSupabase().auth.signOut({ scope: everywhere ? 'global' : 'local' })
     // Aucune donnée personnelle ne reste dans le navigateur après déconnexion.
     await clearCachedData()
   }, [])

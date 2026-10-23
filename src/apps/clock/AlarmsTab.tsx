@@ -2,6 +2,7 @@ import { Play, Plus, Square, Trash2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { buttonPrimary, buttonSecondary, inputBase, Modal } from '../../components/Modal'
 import { useToast } from '../../components/toast'
+import { formatClockTime } from '../../lib/time'
 import { useNowMinute } from '../../lib/useNow'
 import { nextAlarmOccurrence } from '../../../supabase/functions/_shared/zonedTime'
 import { DAY_INITIALS, DAY_NAMES, describeDays, findNextAlarm, formatCountdown, newAlarm, useAlarmActions, useAlarms, useTimeZone } from './alarms'
@@ -43,7 +44,7 @@ export function AlarmsTab() {
               aria-label={`Modifier l’alarme de ${alarm.time}`}
               className={`min-w-0 flex-1 px-4 py-3 text-left ${alarm.enabled ? '' : 'opacity-50'}`}
             >
-              <span className="block text-4xl font-light tabular-nums">{alarm.time}</span>
+              <span className="block text-4xl font-light tabular-nums">{formatClockTime(alarm.time)}</span>
               <span className="block truncate text-sm text-muted">
                 {[alarm.label, describeDays(alarm.days)].filter(Boolean).join(' · ')}
               </span>

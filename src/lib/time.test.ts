@@ -1,5 +1,21 @@
 import { describe, expect, it } from 'vitest'
-import { formatLongDate, formatRelative, formatTime, msUntilNextMinute } from './time'
+import { formatClockTime, formatLongDate, formatRelative, formatTime, hourCycle, msUntilNextMinute, setHourCycle } from './time'
+
+describe('format d’heure', () => {
+  it('24 h par défaut, 12 h sur demande, puis retour en 24 h', () => {
+    expect(hourCycle()).toBe('h23')
+    expect(formatClockTime('07:05')).toBe('07:05')
+    setHourCycle('h12')
+    expect(formatClockTime('07:05')).toBe('07:05 AM')
+    expect(formatClockTime('19:30')).toBe('07:30 PM')
+    expect(formatClockTime('00:15')).toBe('12:15 AM')
+    expect(formatTime(new Date('2026-10-22T14:05:00Z'))).toBe('04:05 PM')
+    expect(localStorage.getItem('monhub.hourCycle')).toBe('h12')
+    expect(formatClockTime('')).toBe('')
+    setHourCycle('h23')
+    expect(formatTime(new Date('2026-10-22T14:05:00Z'))).toBe('16:05')
+  })
+})
 
 describe('formatTime', () => {
   it('affiche l’heure de Paris au format 24 h', () => {

@@ -2,6 +2,7 @@ import type { WidgetSize } from '../types'
 import { expandEvent, localDate } from '../../../supabase/functions/_shared/events'
 import { addDays } from '../../../supabase/functions/_shared/recurrence'
 import { useTimeZone } from '../../data/queries'
+import { hourCycle } from '../../lib/time'
 import { useNowMinute } from '../../lib/useNow'
 import { useEvents } from './data'
 
@@ -13,7 +14,7 @@ export default function UpcomingWidget({ size }: { size: WidgetSize }) {
   const horizon = new Date(now.getTime() + 14 * 86_400_000)
   const today = localDate(now, timeZone)
   const tomorrow = addDays(today, 1)
-  const time = new Intl.DateTimeFormat('fr-FR', { hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone })
+  const time = new Intl.DateTimeFormat('fr-FR', { hour: '2-digit', minute: '2-digit', hourCycle: hourCycle(), timeZone })
   const day = new Intl.DateTimeFormat('fr-FR', { weekday: 'short', day: 'numeric', month: 'short', timeZone })
 
   const upcoming = events

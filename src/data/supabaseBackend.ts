@@ -50,8 +50,8 @@ export const supabaseBackend: Backend = {
     return data ? rowToSettings(data) : null
   },
 
-  async saveSettings(patch) {
-    const row: Record<string, unknown> = { user_id: await userId() }
+  async saveSettings(patch, editedAt) {
+    const row: Record<string, unknown> = { user_id: await userId(), updated_at: editedAt ?? new Date().toISOString() }
     if (patch.theme) row.theme = patch.theme
     if (patch.timeZone) row.time_zone = patch.timeZone
     if (patch.preferences) row.preferences = patch.preferences
@@ -66,11 +66,11 @@ export const supabaseBackend: Backend = {
     return data ? rowToLayout(data) : null
   },
 
-  async saveLayout(kind: LayoutKind, layout: Layout) {
+  async saveLayout(kind: LayoutKind, layout: Layout, editedAt?: string) {
     check(
       await requireSupabase()
         .from('layouts')
-        .upsert({ user_id: await userId(), kind, items: layout.items, page_count: layout.pageCount }),
+        .upsert({ user_id: await userId(), kind, items: layout.items, page_count: layout.pageCount, updated_at: editedAt ?? new Date().toISOString() }),
     )
   },
 
@@ -182,8 +182,10 @@ export const supabaseBackend: Backend = {
     return ((data ?? []) as unknown as Record<string, unknown>[]).map(({ user_id: _userId, ...row }) => row) as T[]
   },
 
-  async upsertRows(table, rows) {
-    if (rows.length) check(await requireSupabase().from(table).upsert(rows))
+  async upsertRows(table, rows, editedAt) {
+    // updated_at = heure de la modification (et non celle lue avec la ligne) : voir la migration hors_ligne.
+    const updatedAt = editedAt ?? new Date().toISOString()
+    if (rows.length) check(await requireSupabase().from(table).upsert(rows.map((row) => ({ ...row, updated_at: updatedAt }))))
   },
 
   async deleteRows(table, ids) {

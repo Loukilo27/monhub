@@ -1,6 +1,7 @@
 import { useCallback } from 'react'
 import { nextEventReminder } from '../../../supabase/functions/_shared/events'
 import { backend } from '../../data'
+import { hourCycle } from '../../lib/time'
 import { useTimeZone } from '../../data/queries'
 import { useDeleteRows, useRows, useSaveRows } from '../../data/rows'
 import type { CalendarEvent } from './types'
@@ -29,7 +30,7 @@ export function useEvents() {
 export async function scheduleEventReminders(event: CalendarEvent, timeZone: string) {
   await backend.cancelReminders(event.id)
   const now = new Date()
-  const TIME = new Intl.DateTimeFormat('fr-FR', { hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone })
+  const TIME = new Intl.DateTimeFormat('fr-FR', { hour: '2-digit', minute: '2-digit', hourCycle: hourCycle(), timeZone })
   const DAY = new Intl.DateTimeFormat('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', timeZone })
   for (const offset of event.reminder_offsets) {
     const next = nextEventReminder(event, offset, now, timeZone)

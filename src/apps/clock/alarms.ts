@@ -1,6 +1,7 @@
 import { useCallback } from 'react'
 import { nextAlarmOccurrence } from '../../../supabase/functions/_shared/zonedTime'
 import { backend } from '../../data'
+import { formatClockTime } from '../../lib/time'
 import { useTimeZone } from '../../data/queries'
 import { useDeleteRows, useRows, useSaveRows } from '../../data/rows'
 import type { Alarm, WorldClock } from './types'
@@ -62,7 +63,7 @@ export async function scheduleAlarmReminder(alarm: Alarm, timeZone: string) {
     kind: 'alarm',
     refId: alarm.id,
     title: alarm.label || 'Alarme',
-    body: `Il est ${alarm.time}`,
+    body: `Il est ${formatClockTime(alarm.time)}`,
     url: '/app/clock?tab=alarmes',
     actions: ['snooze'],
     sendAt: nextAlarmOccurrence(alarm, new Date(), timeZone),

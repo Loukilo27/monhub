@@ -1,4 +1,5 @@
 import { timeZoneOffsetMinutes, zonedParts } from '../../../supabase/functions/_shared/zonedTime'
+import { hourCycle } from '../../lib/time'
 
 /** Décalage d'un fuseau par rapport au fuseau de référence : « +6 h », « −5 h 30 », « Même heure ». */
 export function describeOffset(date: Date, timeZone: string, referenceZone: string): string {
@@ -27,5 +28,5 @@ export function isDaytime(date: Date, timeZone: string): boolean {
 }
 
 export function formatZoneTime(date: Date, timeZone: string): string {
-  return new Intl.DateTimeFormat('fr-FR', { hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone }).format(date)
+  return new Intl.DateTimeFormat('fr-FR', { hour: '2-digit', minute: '2-digit', hourCycle: hourCycle(), timeZone }).format(date)
 }

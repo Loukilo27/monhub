@@ -1,10 +1,14 @@
-import { LogOut, ShieldCheck } from 'lucide-react'
+import { LogOut, MonitorSmartphone, ShieldCheck } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { useAuth } from '../auth/useAuth'
 import { AssistantFloatingButton } from '../assistant/AssistantButton'
 import { AssistantSettings } from '../assistant/AssistantSettings'
 import { PageHeader } from '../components/PageHeader'
+import { usePendingChanges } from '../data/useSync'
 import { NotificationSettings } from '../notifications/NotificationSettings'
+import { BackupSettings } from '../settings/BackupSettings'
+import { DateTimeSettings } from '../settings/DateTimeSettings'
+import { SoundSettings } from '../settings/SoundSettings'
 import { THEME_OPTIONS } from '../theme/theme'
 import { useSetTheme } from '../settings/settingsSync'
 import { WallpaperSettings } from '../settings/WallpaperSettings'
@@ -23,6 +27,20 @@ export default function SettingsPage() {
   const { preference } = useTheme()
   const setTheme = useSetTheme()
   const { session, signOut } = useAuth()
+  const pending = usePendingChanges()
+
+  const confirmSignOut = (everywhere: boolean) => {
+    const question = everywhere
+      ? 'Se déconnecter de MonHub sur tous tes appareils (PC, téléphone…) ? Il faudra se reconnecter partout, avec la 2FA.'
+      : 'Se déconnecter de MonHub sur cet appareil ?'
+    const warning =
+      pending === 1
+        ? '\n\nAttention : une modification faite hors-ligne n’est pas encore envoyée et sera perdue.'
+        : pending
+          ? `\n\nAttention : ${pending} modifications faites hors-ligne ne sont pas encore envoyées et seront perdues.`
+          : ''
+    if (confirm(question + warning)) void signOut(everywhere)
+  }
 
   return (
     <div className="flex min-h-full flex-col">
@@ -34,16 +52,25 @@ export default function SettingsPage() {
             <ShieldCheck aria-hidden className="size-4 text-accent" />
             Double authentification active
           </p>
-          <button
-            type="button"
-            onClick={() => {
-              if (confirm('Se déconnecter de MonHub sur cet appareil ?')) void signOut()
-            }}
-            className="mt-4 flex min-h-11 items-center gap-2 rounded-xl border border-border px-4 text-sm font-medium text-danger transition-colors hover:bg-danger/10"
-          >
-            <LogOut aria-hidden className="size-4" />
-            Se déconnecter
-          </button>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => confirmSignOut(false)}
+              className="flex min-h-11 items-center gap-2 rounded-xl border border-border px-4 text-sm font-medium text-danger transition-colors hover:bg-danger/10"
+            >
+              <LogOut aria-hidden className="size-4" />
+              Se déconnecter
+            </button>
+            <button
+              type="button"
+              onClick={() => confirmSignOut(true)}
+              className="flex min-h-11 items-center gap-2 rounded-xl border border-border px-4 text-sm font-medium transition-colors hover:bg-surface-2"
+            >
+              <MonitorSmartphone aria-hidden className="size-4" />
+              Déconnecter tous les appareils
+            </button>
+          </div>
+          <p className="mt-2 text-xs text-muted">La 2FA se gère depuis le tableau de bord Supabase (Authentication → Users) : un nouveau code est demandé à chaque nouvelle connexion.</p>
         </Section>
         <Section title="Thème">
           <div role="radiogroup" aria-label="Thème" className="grid grid-cols-3 gap-1 rounded-xl bg-surface-2 p-1">
@@ -61,14 +88,23 @@ export default function SettingsPage() {
             ))}
           </div>
         </Section>
+        <Section title="Date et heure">
+          <DateTimeSettings />
+        </Section>
         <Section title="Notifications">
           <NotificationSettings />
+        </Section>
+        <Section title="Sons">
+          <SoundSettings />
         </Section>
         <Section title="Assistant">
           <AssistantSettings />
         </Section>
         <Section title="Fond d’écran">
           <WallpaperSettings />
+        </Section>
+        <Section title="Sauvegarde">
+          <BackupSettings />
         </Section>
         <Section title="À propos">
           <p className="text-sm text-muted">
