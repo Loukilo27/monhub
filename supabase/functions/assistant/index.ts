@@ -24,10 +24,11 @@ type Admin = ReturnType<typeof adminClient>
 
 const API = 'https://generativelanguage.googleapis.com/v1beta/models'
 /**
- * Modèles gratuits, du meilleur au plus léger. Chacun a son propre quota quotidien (20 requêtes
- * seulement pour gemini-3.8-flash) : quand l'un est épuisé, on passe au suivant.
+ * Modèles gratuits, dans l'ordre d'essai. Chacun a son propre quota quotidien : quand l'un est
+ * épuisé, on passe au suivant. gemini-3.6-flash passe en premier : rapide, alors que
+ * gemini-3.8-flash est souvent saturé (jusqu'à 2 min de réponse) et limité à 20 requêtes par jour.
  */
-const MODELS = (Deno.env.get('GEMINI_MODELS') ?? 'gemini-3.8-flash,gemini-3.6-flash,gemini-3-flash-preview,gemini-3.5-flash-lite,gemini-3.1-flash-lite')
+const MODELS = (Deno.env.get('GEMINI_MODELS') ?? 'gemini-3.6-flash,gemini-3.8-flash,gemini-3-flash-preview,gemini-3.5-flash-lite,gemini-3.1-flash-lite')
   .split(',')
   .map((model) => model.trim())
   .filter(Boolean)
@@ -36,6 +37,16 @@ const MODEL = MODELS[0]
 const SKIP_SIGNATURE = 'skip_thought_signature_validator'
 const MAX_ROUNDS = 6
 const THINKING_LEVEL = Deno.env.get('GEMINI_THINKING_LEVEL') ?? 'low'
+/**
+ * Un modèle saturé peut mettre plus de deux minutes à répondre, et Supabase coupe la fonction
+ * à 150 s (« not enough compute resources ») : chaque appel est donc limité, et la requête entière
+ * s'arrête proprement avant cette limite.
+ */
+const CALL_TIMEOUT_MS = Number(Deno.env.get('GEMINI_TIMEOUT_MS') ?? 25_000)
+const REQUEST_BUDGET_MS = 130_000
+/** Modèle trop lent ou saturé : on l'évite quelques minutes (tant que l'instance reste active). */
+const SLOW_MODEL_PAUSE_MS = 5 * 60_000
+const unavailableUntil = new Map<string, number>()
 
 class GeminiError extends Error {
   constructor(
@@ -53,39 +64,55 @@ function replaceSignatures(contents: GeminiContent[]): GeminiContent[] {
   }))
 }
 
+/** Erreurs qui font passer au modèle suivant : quota, modèle inconnu, surcharge, délai dépassé. */
+const FALLBACK_STATUSES = new Set([429, 404, 500, 503, 504])
+
 /**
- * Conversation : essaie les modèles dans l'ordre tant que le quota (429) est épuisé.
+ * Conversation : essaie les modèles dans l'ordre tant que le précédent est épuisé, saturé ou trop lent
+ * (ceux mis en pause récemment passent en dernier).
  * Les signatures de raisonnement d'un autre modèle sont remplacées par la signature factice.
  */
-async function generateWithFallback(body: Json & { contents: GeminiContent[] }): Promise<{ parts: GeminiPart[]; model: string }> {
+async function generateWithFallback(body: Json & { contents: GeminiContent[] }, deadline: number): Promise<{ parts: GeminiPart[]; model: string }> {
+  const now = Date.now()
+  const order = [...MODELS.filter((model) => (unavailableUntil.get(model) ?? 0) <= now), ...MODELS.filter((model) => (unavailableUntil.get(model) ?? 0) > now)]
   let lastError: unknown
-  for (const [index, model] of MODELS.entries()) {
+  for (const model of order) {
+    if (deadline - Date.now() < 2_000) break
     try {
-      const contents = index === 0 ? body.contents : replaceSignatures(body.contents)
-      return { parts: await generate(model, { ...body, contents }), model }
+      const contents = model === MODEL ? body.contents : replaceSignatures(body.contents)
+      return { parts: await generate(model, { ...body, contents }, deadline), model }
     } catch (error) {
       lastError = error
-      if (!(error instanceof GeminiError) || (error.status !== 429 && error.status !== 404)) throw error
+      if (!(error instanceof GeminiError) || !FALLBACK_STATUSES.has(error.status)) throw error
+      if (error.status !== 404) unavailableUntil.set(model, Date.now() + SLOW_MODEL_PAUSE_MS)
     }
   }
-  throw lastError
+  throw lastError ?? new GeminiError(504, 'Délai dépassé')
 }
 
-/** Appel à Gemini, avec deux nouvelles tentatives si le modèle est momentanément surchargé. */
-async function generate(model: string, body: Json): Promise<GeminiPart[]> {
+/** Appel à Gemini, limité dans le temps, avec une nouvelle tentative si le modèle est momentanément surchargé. */
+async function generate(model: string, body: Json, deadline = Date.now() + REQUEST_BUDGET_MS): Promise<GeminiPart[]> {
   for (let attempt = 0; ; attempt++) {
-    const response = await fetch(`${API}/${model}:generateContent`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': env('GEMINI_API_KEY') },
-      body: JSON.stringify(body),
-    })
-    const raw = (await response.json().catch(() => ({}))) as Json
+    let response: Response
+    let raw: Json
+    try {
+      response = await fetch(`${API}/${model}:generateContent`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': env('GEMINI_API_KEY') },
+        body: JSON.stringify(body),
+        signal: AbortSignal.timeout(Math.max(1_000, Math.min(CALL_TIMEOUT_MS, deadline - Date.now()))),
+      })
+      raw = (await response.json().catch(() => ({}))) as Json
+    } catch (error) {
+      if ((error as Error).name === 'TimeoutError') throw new GeminiError(504, `${model} met trop de temps à répondre`)
+      throw error
+    }
     if (response.ok) {
       const candidate = (raw.candidates as { content?: { parts?: GeminiPart[] } }[] | undefined)?.[0]
       return candidate?.content?.parts ?? []
     }
-    if ((response.status === 503 || response.status === 500) && attempt < 2) {
-      await new Promise((resolve) => setTimeout(resolve, 1200 * (attempt + 1)))
+    if ((response.status === 503 || response.status === 500) && attempt < 1 && deadline - Date.now() > 10_000) {
+      await new Promise((resolve) => setTimeout(resolve, 1200))
       continue
     }
     throw new GeminiError(response.status, (raw.error as { message?: string } | undefined)?.message ?? `Erreur Gemini ${response.status}`)
@@ -124,7 +151,7 @@ function errorResponse(request: Request, error: unknown): Response {
     if (error.status === 429) {
       return json(request, { error: 'quota', message: 'Quota gratuit de Gemini atteint pour le moment. Réessaie dans quelques minutes (ou demain si c’est la limite quotidienne).' }, 429)
     }
-    if (error.status === 503) return json(request, { error: 'busy', message: 'Gemini est très sollicité en ce moment. Réessaie dans un instant.' }, 503)
+    if (error.status === 503 || error.status === 504) return json(request, { error: 'busy', message: 'Gemini est très sollicité en ce moment. Réessaie dans un instant.' }, 503)
     if (error.status === 400 && /API key/i.test(error.message)) return json(request, { error: 'invalid_key', message: 'Clé API Gemini invalide.' }, 500)
     if (error.status === 403) return json(request, { error: 'forbidden', message: 'Accès à Gemini refusé pour cette clé.' }, 502)
     return json(request, { error: 'gemini', message: `Gemini : ${error.message}` }, 502)
@@ -136,6 +163,7 @@ Deno.serve(async (request) => {
   if (request.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders(request) })
   if (request.method !== 'POST') return json(request, { error: 'Méthode non autorisée' }, 405)
 
+  const deadline = Date.now() + REQUEST_BUDGET_MS
   const admin = adminClient()
   const cronSecret = request.headers.get('x-cron-secret')
   const fromServer = cronSecret !== null && safeEqual(cronSecret, env('CRON_SECRET'))
@@ -218,7 +246,7 @@ Deno.serve(async (request) => {
         tools,
         // Réflexion légère : réponses bien plus rapides, suffisant pour un assistant du quotidien.
         generationConfig: { thinkingConfig: { thinkingLevel: THINKING_LEVEL } },
-      })
+      }, deadline)
       // Le tour du modèle est gardé tel quel (signatures de raisonnement comprises).
       contents.push({ role: 'model', parts: parts.length ? parts : [{ text: '' }] })
       const calls = parts.filter((part) => part.functionCall).map((part) => part.functionCall!)
