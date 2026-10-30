@@ -70,7 +70,11 @@ Les mini-applis programment des **rappels** (table `reminders`). Chaque minute, 
 - L'interface est mise en cache par le service worker et s'ouvre sans réseau ; les dernières données affichées sont gardées dans le navigateur (cache TanStack Query).
 - Sans réseau, les écritures (lignes, réglages, disposition, rappels) passent par une **file d'attente** (`src/data/outbox.ts`) conservée dans le navigateur, puis sont envoyées dans l'ordre au retour de la connexion. Une pastille en bas à droite indique « Hors-ligne » et le nombre de modifications en attente.
 - **La dernière modification gagne** : chaque écriture porte l'heure à laquelle elle a été faite (`updated_at`). Le trigger `private.set_updated_at` ignore une modification plus ancienne que la version enregistrée (migration `hors_ligne`).
-- Les dessins, le fond d'écran, l'assistant et la musique demandent une connexion.
+- Les dessins, le fond d'écran, l'assistant, la musique et la météo (hors dernières prévisions en cache) demandent une connexion.
+
+### Météo
+
+Les prévisions et la recherche de villes viennent d'[Open-Meteo](https://open-meteo.com/) (gratuit, sans clé ni compte), appelé directement par l'app : seules les coordonnées des villes lui sont envoyées. Les villes sont enregistrées dans la table `weather_cities` (une favorite, affichée par défaut) ; les dernières prévisions restent visibles hors-ligne. Le widget garde la ville choisie avec la flèche dans ses réglages (`config.cityId`).
 
 ### Sauvegarde
 

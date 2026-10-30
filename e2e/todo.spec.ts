@@ -53,10 +53,10 @@ test.describe('To-do', () => {
     await page.goto('/#/')
     await page.getByRole('button', { name: 'Modifier', exact: true }).click()
     await page.getByRole('button', { name: 'Ajouter', exact: true }).click()
-    await page.getByRole('button', { name: 'Ajouter le widget Tâches du jour en 4×2' }).click()
+    await page.getByRole('button', { name: 'Ajouter le widget Prochaines tâches en 4×2' }).click()
     await page.getByRole('button', { name: 'Terminé' }).click()
 
-    const widget = page.getByRole('group', { name: 'Widget Tâches du jour' })
+    const widget = page.getByRole('group', { name: 'Widget Prochaines tâches' })
     await expect(widget).toContainText('Payer la cantine')
     await widget.getByRole('checkbox', { name: 'Cocher « Payer la cantine »' }).click()
     await expect(widget).toContainText('Rien de prévu')

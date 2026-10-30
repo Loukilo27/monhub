@@ -13,7 +13,7 @@ export const todoApp: MiniApp = {
   widgets: [
     {
       id: 'today',
-      name: 'Tâches du jour',
+      name: 'Prochaines tâches',
       sizes: [
         { w: 2, h: 2 },
         { w: 4, h: 2 },

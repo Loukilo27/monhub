@@ -96,6 +96,15 @@ export function sortTasks(tasks: Task[], sort: TaskSort): Task[] {
   }
 }
 
+/** Prochaines tâches (widget) : tâches principales datées, en retard d'abord, jusqu'à `days` jours. */
+export function upcomingTasks(tasks: Task[], today: string, days = 14): Task[] {
+  const horizon = addDays(today, days)
+  return sortTasks(
+    tasks.filter((task) => !task.parent_id && !task.completed_at && task.due_date !== null && task.due_date <= horizon),
+    'due',
+  )
+}
+
 /** Position entre deux voisins pour un réordonnancement (glisser-déposer). */
 export function positionBetween(before: number | undefined, after: number | undefined): number {
   if (before === undefined && after === undefined) return 0

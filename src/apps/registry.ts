@@ -4,13 +4,14 @@ import { musicApp } from './music'
 import { notesApp } from './notes'
 import { paintApp } from './paint'
 import { todoApp } from './todo'
+import { weatherApp } from './weather'
 import type { MiniApp, WidgetDefinition } from './types'
 
 /**
  * Registre central des mini-applis. Pour en ajouter une : créer son dossier
  * dans src/apps/<id>/ avec un index.ts qui exporte sa définition, puis l'ajouter ici.
  */
-export const APPS: MiniApp[] = [clockApp, todoApp, calendarApp, notesApp, musicApp, paintApp]
+export const APPS: MiniApp[] = [clockApp, todoApp, calendarApp, weatherApp, notesApp, musicApp, paintApp]
 
 const byId = new Map(APPS.map((app) => [app.id, app]))
 

@@ -67,7 +67,7 @@ export function BackupSettings() {
   return (
     <div className="space-y-3 text-sm">
       <p className="text-muted">
-        Un fichier ZIP avec toutes tes données (réglages, accueil, tâches, agenda, notes, horloge, musique, conversations) au format JSON, et tes dessins.
+        Un fichier ZIP avec toutes tes données (réglages, accueil, tâches, agenda, notes, horloge, météo, musique, conversations) au format JSON, et tes dessins.
       </p>
       <div className="flex flex-wrap gap-2">
         <button type="button" disabled={Boolean(progress) || !online} onClick={() => void exportAll()} className={`${buttonSecondary} flex items-center gap-2`}>

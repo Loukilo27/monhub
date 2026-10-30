@@ -94,7 +94,7 @@ export interface Settings {
 }
 
 /** Tables des mini-applis, accessibles par l'API générique (listRows / upsertRows / deleteRows). */
-export type AppTable = 'world_clocks' | 'alarms' | 'timers' | 'todo_lists' | 'tags' | 'tasks' | 'events' | 'notes' | 'drawings' | 'music_playlists' | 'ai_conversations' | 'ai_messages'
+export type AppTable = 'world_clocks' | 'alarms' | 'timers' | 'todo_lists' | 'tags' | 'tasks' | 'events' | 'notes' | 'drawings' | 'music_playlists' | 'weather_cities' | 'ai_conversations' | 'ai_messages'
 
 /** Buckets de fichiers privés (chaque utilisateur n'accède qu'à son dossier). */
 export type FileBucket = 'drawings'

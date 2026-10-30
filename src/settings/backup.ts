@@ -29,6 +29,7 @@ export const BACKUP_TABLES: AppTable[] = [
   'timers',
   'drawings',
   'music_playlists',
+  'weather_cities',
   'ai_conversations',
   'ai_messages',
 ]
@@ -44,6 +45,7 @@ const TABLE_LABELS: Record<string, string> = {
   timers: 'minuteurs',
   drawings: 'dessins',
   music_playlists: 'playlists',
+  weather_cities: 'villes météo',
   ai_conversations: 'conversations',
   ai_messages: 'messages de l’assistant',
 }

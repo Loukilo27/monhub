@@ -32,7 +32,7 @@ function RootLayout() {
   useRealtimeSync()
   useOutboxSync()
   // Tâches, agenda et notes : synchronisés en temps réel entre appareils (l'Horloge gère ses tables dans ClockRinger).
-  useRowsRealtime(['todo_lists', 'tags', 'tasks', 'events', 'notes', 'drawings', 'music_playlists'])
+  useRowsRealtime(['todo_lists', 'tags', 'tasks', 'events', 'notes', 'drawings', 'music_playlists', 'weather_cities'])
   useNotificationLinks()
   return (
     <AssistantProvider>

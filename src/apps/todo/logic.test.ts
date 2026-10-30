@@ -10,6 +10,7 @@ import {
   reminderTime,
   sortTasks,
   tasksForView,
+  upcomingTasks,
 } from './logic'
 import type { Task } from './types'
 
@@ -131,5 +132,22 @@ describe('tâches récurrentes', () => {
   it('ne fait rien sans règle ou si la série est terminée', () => {
     expect(nextRecurringTask(task({ due_date: TODAY }), TODAY, 'x')).toBeNull()
     expect(nextRecurringTask(task({ due_date: TODAY, recurrence_rule: 'FREQ=DAILY;UNTIL=20261022' }), TODAY, 'x')).toBeNull()
+  })
+})
+
+describe('upcomingTasks (widget Prochaines tâches)', () => {
+  it('tâches datées non faites, en retard d’abord, jusqu’à 14 jours, sans les sous-tâches', () => {
+    const tasks = [
+      task({ id: 'demain', due_date: '2026-10-23' }),
+      task({ id: 'retard', due_date: '2026-10-20' }),
+      task({ id: 'aujourdhui-matin', due_date: TODAY, due_time: '08:00' }),
+      task({ id: 'aujourdhui', due_date: TODAY }),
+      task({ id: 'loin', due_date: '2026-11-20' }),
+      task({ id: 'sans-date' }),
+      task({ id: 'faite', due_date: TODAY, completed_at: '2026-10-22T07:00:00Z' }),
+      task({ id: 'sous-tache', due_date: TODAY, parent_id: 'aujourdhui' }),
+      task({ id: 'limite', due_date: '2026-11-05' }),
+    ]
+    expect(upcomingTasks(tasks, TODAY).map((item) => item.id)).toEqual(['retard', 'aujourdhui-matin', 'aujourdhui', 'demain', 'limite'])
   })
 })
